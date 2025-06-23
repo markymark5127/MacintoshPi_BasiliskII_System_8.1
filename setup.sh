@@ -53,8 +53,8 @@ if [ -d InstallFiles ]; then
   humount
 fi
 
-echo "📑 Copying Basilisk II prefs..."
-cp BasiliskII.prefs ~/.basilisk_ii_prefs
+echo "📑 Copying Basilisk II install prefs..."
+cp BasiliskII.install.prefs ~/.basilisk_ii_prefs
 
 echo "🎛️ Creating overlay scripts..."
 cp shutdown_overlay.sh ~/shutdown_overlay.sh
@@ -88,6 +88,12 @@ echo "startx" >> ~/.bash_profile
 
 echo "🔐 Setting passwordless sudo for shutdown/reboot..."
 echo 'pi ALL=(ALL) NOPASSWD: /sbin/shutdown, /sbin/reboot' | sudo tee -a /etc/sudoers
+
+# Post-install cleanup prompt
+read -p "🖥️ Press ENTER after completing Mac OS 8.1 installation to finalize setup..." temp
+cp BasiliskII.final.prefs ~/.basilisk_ii_prefs
+
+echo "✅ Installation media removed from prefs. Ready to boot into Mac OS 8.1."
 
 echo "✅ Setup complete. Rebooting..."
 sleep 5
