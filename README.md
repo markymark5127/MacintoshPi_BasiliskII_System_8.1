@@ -53,8 +53,8 @@ This project transforms a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Li
 
 1. Clone the project:
    ```bash
-   git clone https://github.com/yourusername/macos8-raspi-setup.git
-   cd macos8-raspi-setup
+   git clone https://github.com/markymark5127/MacintoshPi_BasiliskII_System_8.1.git
+   cd MacintoshPi_BasiliskII_System_8.1
    ```
 
 2. Make the script executable:
