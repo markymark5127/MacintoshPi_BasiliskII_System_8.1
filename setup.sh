@@ -15,7 +15,7 @@ fi
 
 echo "🔧 Installing dependencies..."
 sudo apt update
-sudo apt install -y build-essential libsdl2-dev libsdl2-image-dev git hfsutils xinit x11-xserver-utils unclutter feh xbindkeys alsa-utils autoconf automake libtool
+sudo apt install -y build-essential libsdl2-dev libsdl2-image-dev git hfsutils xinit x11-xserver-utils unclutter feh xbindkeys alsa-utils autoconf automake libtool libmpfr-dev
 
 if $MINECRAFT_MODE; then
   echo "🧱 Installing Minecraft Pi Edition dependencies..."
