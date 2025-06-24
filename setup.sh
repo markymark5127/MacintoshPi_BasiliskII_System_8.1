@@ -25,7 +25,7 @@ cp reboot.png ~/macos8/
 # Reassemble Mac OS 8.1 ISO from parts if not already present
 if [ ! -f ~/macos8/MacOS8_1.iso ]; then
   echo "📦 Reassembling Mac OS 8.1 ISO from parts..."
-  cat MacOS8_1.iso.part_* > ~/macos8/MacOS8_1.iso
+  cat MacOS8_1/MacOS8_1.iso.part_* > ~/macos8/MacOS8_1.iso
 
   echo "🔍 Verifying checksum..."
   echo "db5ec7aedcb4a3b8228c262cebcb44cf  ~/macos8/MacOS8_1.iso" > ~/macos8/MacOS8_1.iso.md5
@@ -37,6 +37,7 @@ if [ ! -f ~/macos8/MacOS8_1.iso ]; then
   fi
 fi
 
+
 echo "💽 Creating dynamic macos8.img..."
 TOTAL_MB=$(df --output=avail / | tail -1)
 TOTAL_MB=$((TOTAL_MB / 1024))
@@ -45,13 +46,21 @@ dd if=/dev/zero of=~/macos8/macos8.img bs=1M count=$IMG_MB
 mkfs.hfs ~/macos8/macos8.img
 
 if [ -d InstallFiles ]; then
-  echo "📂 Copying InstallFiles into macos8.img..."
+  echo "📂 Copying InstallFiles into macos8.img → Applications folder..."
   hmount ~/macos8/macos8.img
-  for file in InstallFiles/*; do
-    hcopy "$file" ":"
-  done
+  if hls ":Applications" > /dev/null 2>&1; then
+    echo "✅ Applications folder found on macos8.img."
+  else
+    echo "📁 Applications folder not found. Creating it..."
+    hmkdir ":Applications"
+  fi
+  echo "📄 Recursively copying InstallFiles/* to :Applications:"
+  hcopy -r InstallFiles/* ":Applications:"
   humount
 fi
+
+
+
 
 echo "📑 Copying Basilisk II install prefs..."
 cp BasiliskII.install.prefs ~/.basilisk_ii_prefs
