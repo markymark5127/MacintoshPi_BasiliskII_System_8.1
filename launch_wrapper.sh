@@ -1,9 +1,10 @@
 #  launch_wrapper.sh
 #  Handles seamless switching between Basilisk II and Minecraft Pi Edition
 
-TRIGGER_FILE="$HOME/Unix/.launch_minecraft"
+# Shared folder inside the emulator maps to the Pi's Downloads directory
+TRIGGER_FILE="$HOME/Downloads/.launch_minecraft"
 
-# Ensure trigger file directory exists (in case user hasn't launched BasiliskII yet)
+# Ensure trigger file directory exists
 mkdir -p "$(dirname "$TRIGGER_FILE")"
 
 while true; do
