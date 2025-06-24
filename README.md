@@ -16,6 +16,8 @@ This project transforms a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Li
 - 🛌 Prevents screen blanking and sleep
 - ⌨️ Hotkeys for reboot (`Ctrl+Alt+R`) and shutdown (`Ctrl+Alt+S`) with retro-style overlay screens
 - ✅ Post-install prompt finalizes setup and removes install media
+- 📁 Mounts Pi’s `~/Downloads/` into Mac as “Unix” drive
+- 🧱 Optional Minecraft Pi Edition integration (desktop launcher inside Mac)
 
 ---
 
@@ -33,7 +35,8 @@ This project transforms a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Li
 | `reboot.png`              | 800×600+ fullscreen image shown before reboot             |
 | `shutdown_overlay.sh`     | Script: show shutdown image and power off                 |
 | `reboot_overlay.sh`       | Script: show reboot image and restart                     |
-| `InstallFiles/`           | (Optional) Items auto-copied to `macos8.img/Applications` |
+| `InstallFiles/`           | Apps auto-copied to `macos8.img/Applications`             |
+| `InstallFiles/Minecraft/` | If `--with-minecraft` flag: `.launch_minecraft` → Applications, `Minecraft` app → Desktop |
 
 ---
 
@@ -59,9 +62,9 @@ This project transforms a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Li
    chmod +x setup.sh
    ```
 
-3. Run the setup script:
+3. Run the setup script (optionally add Minecraft support):
    ```bash
-   sudo ./setup.sh
+   sudo ./setup.sh --with-minecraft
    ```
 
 4. After reboot, Mac OS 8.1 will launch in fullscreen automatically.
@@ -95,8 +98,6 @@ Each action displays a retro-style fullscreen overlay image before execution.
 
 ### 🔧 Preinstalled Tools (from `InstallFiles/`)
 
-The following tools are included and will be auto-copied into the Mac OS 8.1 virtual disk:
-
 - 🛠 **ResEdit 2.1.1**
 - 📄 **Adobe Acrobat 3.0**
 - 💾 **Disk Copy 4.2**
@@ -105,8 +106,6 @@ The following tools are included and will be auto-copied into the Mac OS 8.1 vir
 ---
 
 ### 🎨 Custom Overlay Templates (`images/` Folder)
-
-The `images/` folder contains base templates you can use to make your own overlays:
 
 | File                        | Description                            |
 |-----------------------------|----------------------------------------|
