@@ -1,14 +1,32 @@
 #!/bin/bash
 set -e
 
+MINECRAFT_MODE=false
+
+if [[ "$1" == "--with-minecraft" ]]; then
+  MINECRAFT_MODE=true
+  echo "🧱 Minecraft mode enabled — additional steps will be included."
+fi
+
 if [ "$EUID" -ne 0 ]; then
-  echo "⚠️ Please run this script with sudo: sudo $0"
+  echo "⚠️ Please run this script with sudo: sudo $0 [--with-minecraft]"
   exit 1
 fi
 
 echo "🔧 Installing dependencies..."
 sudo apt update
 sudo apt install -y build-essential libsdl2-dev libsdl2-image-dev git hfsutils xinit x11-xserver-utils unclutter feh xbindkeys alsa-utils autoconf automake libtool
+
+if $MINECRAFT_MODE; then
+  echo "🧱 Installing Minecraft Pi Edition dependencies..."
+  sudo apt install -y mesa-utils libgl1-mesa-dri libgles2
+  mkdir -p "$HOME/mcpi"
+  cd "$HOME/mcpi"
+  wget https://archive.org/download/minecraft-pi/minecraft-pi-0.1.1.tar.gz
+  tar -xzf minecraft-pi-0.1.1.tar.gz
+  chmod +x minecraft-pi
+  cd -
+fi
 
 echo "📦 Cloning & building Basilisk II..."
 git clone https://github.com/kanjitalk755/macemu.git
@@ -31,7 +49,6 @@ cp reboot.png "$HOME/macos8/"
 if [ ! -f "$HOME/macos8/MacOS8_1.iso" ]; then
   echo "📦 Reassembling Mac OS 8.1 ISO from parts..."
   cat MacOS8_1/MacOS8_1.iso.part_* > "$HOME/macos8/MacOS8_1.iso"
-
   echo "🔍 Verifying checksum..."
   echo "db5ec7aedcb4a3b8228c262cebcb44cf  $HOME/macos8/MacOS8_1.iso" > "$HOME/macos8/MacOS8_1.iso.md5"
   if md5sum -c "$HOME/macos8/MacOS8_1.iso.md5"; then
@@ -45,7 +62,13 @@ fi
 echo "💽 Creating dynamic macos8.img..."
 TOTAL_MB=$(df --output=avail / | tail -1)
 TOTAL_MB=$((TOTAL_MB / 1024))
-IMG_MB=$((TOTAL_MB - 200))
+RESERVED_MB=500
+
+if $MINECRAFT_MODE; then
+  RESERVED_MB=800  # reserve more space if Minecraft is used
+fi
+
+IMG_MB=$((TOTAL_MB - RESERVED_MB))
 dd if=/dev/zero of="$HOME/macos8/macos8.img" bs=1M count=$IMG_MB
 mkfs.hfs "$HOME/macos8/macos8.img"
 
@@ -54,16 +77,33 @@ if [ -d InstallFiles ]; then
   command -v hmount >/dev/null 2>&1 || { echo "❌ hfsutils not found in PATH. Aborting."; exit 1; }
 
   hmount "$HOME/macos8/macos8.img"
-  if hls ":Applications" > /dev/null 2>&1; then
-    echo "✅ Applications folder found on macos8.img."
-  else
+
+  if ! hls ":Applications" > /dev/null 2>&1; then
     echo "📁 Applications folder not found. Creating it..."
     hmkdir ":Applications"
   fi
-  echo "📄 Recursively copying InstallFiles/* to :Applications:"
-  hcopy -r InstallFiles/* ":Applications:"
+
+  echo "📄 Copying general apps to :Applications..."
+  for item in InstallFiles/*; do
+    name=$(basename "$item")
+    if [[ "$name" != "Minecraft" ]]; then
+      hcopy -r "$item" ":Applications:"
+    fi
+  done
+
+  if $MINECRAFT_MODE; then
+    echo "🧱 Minecraft mode — copying Minecraft launcher files..."
+    if [ -f InstallFiles/Minecraft/.launch_minecraft ]; then
+      hcopy InstallFiles/Minecraft/.launch_minecraft ":Applications:"
+    fi
+    if [ -d InstallFiles/Minecraft/Minecraft ]; then
+      hcopy -r InstallFiles/Minecraft/Minecraft ":Desktop:"
+    fi
+  fi
+
   humount
 fi
+
 
 echo "📑 Copying Basilisk II install prefs..."
 cp BasiliskII.install.prefs "$HOME/.basilisk_ii_prefs"
@@ -83,7 +123,23 @@ cat <<EOF > "$HOME/.xbindkeysrc"
 EOF
 
 echo "🖥️ Setting up X autostart..."
-cat <<EOF > "$HOME/.xinitrc"
+if $MINECRAFT_MODE; then
+  echo "➡️ Using Minecraft-aware launch wrapper..."
+  cp launch_wrapper.sh "$HOME/launch_wrapper.sh"
+  chmod +x "$HOME/launch_wrapper.sh"
+
+  cat <<EOF > "$HOME/.xinitrc"
+#!/bin/bash
+xset s off
+xset -dpms
+xset s noblank
+unclutter -idle 0 &
+xbindkeys &
+\$HOME/launch_wrapper.sh
+EOF
+else
+  echo "➡️ Using standard BasiliskII launch..."
+  cat <<EOF > "$HOME/.xinitrc"
 #!/bin/bash
 xset s off
 xset -dpms
@@ -92,6 +148,8 @@ unclutter -idle 0 &
 xbindkeys &
 BasiliskII
 EOF
+fi
+
 chmod +x "$HOME/.xinitrc"
 
 echo "👤 Enabling autologin to console..."
