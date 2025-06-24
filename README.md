@@ -1,39 +1,39 @@
 # 🍎 Vintage Mac OS 8.1 Kiosk on Raspberry Pi 5
 
-This project turns a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Lite into a **fully self-contained, fullscreen, kiosk-style vintage Mac** running **Mac OS 8.1** via Basilisk II. It includes sound, keyboard shutdown/reboot hotkeys, auto-boot, and a curated collection of classic Mac games and educational software.
+This project transforms a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Lite into a **fullscreen, kiosk-style vintage Macintosh** running **Mac OS 8.1** via Basilisk II. It supports sound, auto-boot, hotkeys for shutdown/reboot, and includes a curated library of classic Mac software.
 
 ---
 
 ## 💻 Features
 
-- 🔧 One-command setup script (`setup.sh`)
-- 🍏 Basilisk II emulator builds from source
-- 📀 Automatically generates large `macos8.img` based on available SD card space
-- 🎮 Pre-installed classic Mac games and educational software
-- 🗄️ Fullscreen-only mode (no desktop)
-- 🔊 Sound support with ALSA
-- 🐁 Auto-hiding mouse cursor
+- 🔧 One-command setup via `setup.sh`
+- 🧱 Builds Basilisk II emulator from source (kanjitalk755 fork)
+- 💽 Dynamically creates `macos8.img` using available SD card space
+- 🎮 Preloaded with classic Mac games and educational apps (optional)
+- 🖥️ Fullscreen-only mode (distraction-free for kids)
+- 🔊 Sound support via ALSA
+- 🐁 Auto-hides the mouse cursor
 - 🛌 Prevents screen blanking and sleep
-- ⌨️ Hotkeys for reboot (`Ctrl+Alt+R`) and shutdown (`Ctrl+Alt+S`) with retro-style fullscreen overlays
-- ✅ Prompts to finalize setup after install, and cleans up boot media and prefs
+- ⌨️ Hotkeys for reboot (`Ctrl+Alt+R`) and shutdown (`Ctrl+Alt+S`) with retro-style overlay screens
+- ✅ Post-install prompt finalizes setup and removes install media
 
 ---
 
 ## 📦 Included Files
 
-| File/Folder                | Description                                        |
-|---------------------------|----------------------------------------------------|
-| `setup.sh`                | Main script — run once to set everything up        |
-| `BasiliskII.install.prefs`| Initial config (boots floppy + CD + HDD)           |
-| `BasiliskII.final.prefs`  | Final config (boots only the installed system)     |
-| `LC575.ROM`               | Macintosh ROM file (Quadra 650 or similar)         |
-| `DiskTools_MacOS8.image`  | Boot floppy for Mac OS 8.1 installer               |
-| `MacOS8_1.iso.part_*`     | ISO split files (reassembled on Pi)                |
-| `shutdown.png`            | Fullscreen image shown before power-off           |
-| `reboot.png`              | Fullscreen image shown before reboot              |
-| `shutdown_overlay.sh`     | Script to show image and shut down                 |
-| `reboot_overlay.sh`       | Script to show image and reboot                    |
-| `InstallFiles/`           | Optional apps/games auto-copied to `macos8.img`    |
+| File/Folder                | Description                                               |
+|---------------------------|-----------------------------------------------------------|
+| `setup.sh`                | Main setup script                                         |
+| `BasiliskII.install.prefs`| Prefs for initial install mode (floppy + CD + HDD)        |
+| `BasiliskII.final.prefs`  | Prefs for final boot mode (just the HDD)                  |
+| `LC575.ROM`               | Macintosh Quadra ROM file                                 |
+| `DiskTools_MacOS8.image`  | Boot floppy used for installation                         |
+| `MacOS8_1.iso.part_*`     | Split ISO parts (joined automatically)                    |
+| `shutdown.png`            | 800×600+ fullscreen image shown before shutdown           |
+| `reboot.png`              | 800×600+ fullscreen image shown before reboot             |
+| `shutdown_overlay.sh`     | Script: show shutdown image and power off                 |
+| `reboot_overlay.sh`       | Script: show reboot image and restart                     |
+| `InstallFiles/`           | (Optional) Items auto-copied to `macos8.img/Applications` |
 
 ---
 
@@ -41,8 +41,8 @@ This project turns a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Lite in
 
 - Raspberry Pi 5 (8GB recommended)
 - Raspberry Pi OS 64-bit Lite (Kernel 6.1+)
-- Internet access on first boot for setup
-- A microSD card with at least 4–8 GB free
+- Internet access for setup
+- A microSD card with 4–8 GB or more free space
 
 ---
 
@@ -54,21 +54,21 @@ This project turns a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Lite in
    cd macos8-raspi-setup
    ```
 
-2. Make the setup script executable:
+2. Make the script executable:
    ```bash
    chmod +x setup.sh
    ```
 
-3. Run the setup:
+3. Run the setup script:
    ```bash
-   ./setup.sh
+   sudo ./setup.sh
    ```
 
-4. After reboot, Mac OS 8.1 will launch fullscreen automatically with installer loaded.
+4. After reboot, Mac OS 8.1 will launch in fullscreen automatically.
 
-5. Complete the install inside Mac OS.
+5. Inside the emulator, complete the OS installation normally.
 
-6. After installation, press ENTER in the terminal when prompted to finalize setup. This will remove the floppy and CD and reboot into your installed system.
+6. When prompted in the terminal, press ENTER to finalize setup (removes CD/floppy and reboots into your installed Mac OS 8.1 system).
 
 ---
 
@@ -79,45 +79,72 @@ This project turns a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Lite in
 | `Ctrl + Alt + S` | Shutdown system  |
 | `Ctrl + Alt + R` | Reboot system    |
 
-Each shows a friendly fullscreen retro overlay image before acting.
+Each action displays a retro-style fullscreen overlay image before execution.
 
 ---
 
 ## 📋 Customization
 
-- To add more Mac apps, place `.sit`, `.img`, or `.app` files into `InstallFiles/`
-- You can replace `shutdown.png` or `reboot.png` with your own 800x600+ pixel art
+- To include more Mac apps:  
+  Drop `.sit`, `.img`, or `.app` files into the `InstallFiles/` folder before running `setup.sh`.
+
+- To customize the reboot/shutdown visuals:  
+  Replace `shutdown.png` and `reboot.png` with your own **800x600+** PNG images.
 
 ---
 
-## 📂 Shared Folder
+### 🔧 Preinstalled Tools (from `InstallFiles/`)
 
-Your Raspberry Pi’s `~/Downloads` folder is mounted in the emulator — drag and drop files into it, then access them from within Mac OS.
+The following tools are included and will be auto-copied into the Mac OS 8.1 virtual disk:
+
+- 🛠 **ResEdit 2.1.1**
+- 📄 **Adobe Acrobat 3.0**
+- 💾 **Disk Copy 4.2**
+- 📦 **StuffIt Expander 5.5**
 
 ---
 
-## 😋 Who’s It For?
+### 🎨 Custom Overlay Templates (`images/` Folder)
 
-This project was built for a 5-year-old to safely and easily explore retro educational Mac software without needing to navigate modern OS interfaces.
+The `images/` folder contains base templates you can use to make your own overlays:
+
+| File                        | Description                            |
+|-----------------------------|----------------------------------------|
+| `MacBackground.png`         | Clean 800×600 background base          |
+| `shutdown_MacBackground.png`| Example shutdown image                 |
+| `reboot_MacBackground.png`  | Example reboot image                   |
+| `Message_MacBackground.png` | Template with text overlay             |
+
+---
+
+## 📂 Shared Folder Access
+
+The Raspberry Pi’s `~/Downloads/` folder is mounted inside the emulator — drop files there from the Pi and access them within Mac OS using tools like `Disk Copy` or `StuffIt`.
+
+---
+
+## 👶 Who’s It For?
+
+This project was built for a 5-year-old to explore vintage Macintosh games and software in a safe, simplified, and focused environment — no modern OS distractions.
 
 ---
 
 ## 💡 Inspiration
 
-- Original Macintosh LC 575 form factor
-- Classic Mac OS educational titles like Millie's Math House, Kid Pix, and Bailey's Book House
+- Apple Macintosh LC 575 and all-in-one 68k machines
+- Kid Pix, Millie’s Math House, Bailey’s Book House
 - The MacintoshPi and Mini vMac projects
 
 ---
 
 ## 📜 License
 
-This project is provided as-is for educational and nostalgic purposes. Please ensure you own licenses for all Apple software and ROM files used.
+This project is provided as-is for personal, educational, and nostalgic use. Please ensure you own licenses for any Apple software and ROMs used with it.
 
 ---
 
 ## ❤️ Special Thanks
 
-- Basilisk II contributors
-- Archive.org Mac software preservation
-- Retro tech nerds everywhere keeping 68k alive
+- [kanjitalk755](https://github.com/kanjitalk755/macemu) for maintaining Basilisk II
+- Archive.org and Macintosh Garden for preserving vintage software
+- Everyone in the retro Mac community keeping the 68k flame alive 🔥🍏
