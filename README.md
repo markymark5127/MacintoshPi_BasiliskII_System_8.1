@@ -43,8 +43,8 @@ The installer handles all dependencies and will automatically copy the `Minecraf
 | `LC575.ROM`               | Macintosh Quadra ROM file                                 |
 | `DiskTools_MacOS8.image`  | Boot floppy used for installation                         |
 | `MacOS8_1.iso.part_*`     | Split ISO parts (joined automatically)                    |
-| `shutdown.png`            | 800×600+ fullscreen image shown before shutdown           |
-| `reboot.png`              | 800×600+ fullscreen image shown before reboot             |
+| `Images/shutdown_MacBackground.png`            | 800×600+ fullscreen image shown before shutdown           |
+| `Images/reboot_MacBackground.png`              | 800×600+ fullscreen image shown before reboot             |
 | `shutdown_overlay.sh`     | Script: show shutdown image and power off                 |
 | `reboot_overlay.sh`       | Script: show reboot image and restart                     |
 | `InstallFiles/`           | Apps auto-copied to `macos8.img/Applications`             |
@@ -106,7 +106,7 @@ Each action displays a retro-style fullscreen overlay image before execution.
   Drop `.sit`, `.img`, or `.app` files into the `InstallFiles/` folder before running `setup.sh`.
 
 - To customize the reboot/shutdown visuals:  
-  Replace `shutdown.png` and `reboot.png` with your own **800x600+** PNG images.
+  Replace `Images/shutdown_MacBackground.png` and `Images/reboot_MacBackground.png` with your own **800x600+** PNG images.
 
 ---
 

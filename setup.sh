@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 MINECRAFT_MODE=false
 
@@ -48,8 +48,8 @@ mkdir -p "$USER_HOME/macos8" "$USER_HOME/macos8/Apps"
 echo "📄 Copying ROM and disk images..."
 cp LC575.ROM "$USER_HOME/macos8/"
 cp DiskTools_MacOS8.image "$USER_HOME/macos8/"
-cp shutdown.png "$USER_HOME/macos8/"
-cp reboot.png "$USER_HOME/macos8/"
+cp Images/shutdown_MacBackground.png "$USER_HOME/macos8/shutdown.png"
+cp Images/reboot_MacBackground.png "$USER_HOME/macos8/reboot.png"
 
 if [ ! -f "$USER_HOME/macos8/MacOS8_1.iso" ]; then
   echo "📦 Reassembling Mac OS 8.1 ISO from parts..."
@@ -125,9 +125,9 @@ sudo raspi-config nonint do_boot_behaviour B4
 echo "🔧 Configuring splash screen (optional)..."
 sudo sed -i '/^disable_splash/d' /boot/config.txt
 echo "disable_splash=1" | sudo tee -a /boot/config.txt
-if [ -f apple_splash.png ]; then
+if [ -f Images/apple_splash.png ]; then
   sudo apt install -y plymouth plymouth-themes
-  sudo cp apple_splash.png /usr/share/plymouth/themes/pix/splash.png
+  sudo cp Images/apple_splash.png /usr/share/plymouth/themes/pix/splash.png
 fi
 
 echo "🔐 Setting passwordless sudo for shutdown/reboot..."
