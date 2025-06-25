@@ -94,8 +94,8 @@ if [ "$IMG_MB" -gt "$MAX_MB" ]; then
   IMG_MB=$MAX_MB
 fi
 
-echo "⏳ Allocating disk image of ${IMG_MB} MB..."
-truncate -s "${IMG_MB}M" "$USER_HOME/macos8/macos8.img"
+echo "⏳ Allocating disk image of ${IMG_MB} MB using dd..."
+dd if=/dev/zero of="$USER_HOME/macos8/macos8.img" bs=1M count=$IMG_MB status=progress
 ls -lh "$USER_HOME/macos8/macos8.img"
 
 echo "🧾 Formatting disk image as HFS..."
