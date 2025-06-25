@@ -48,8 +48,8 @@ mkdir -p "$USER_HOME/macos8" "$USER_HOME/macos8/Apps"
 echo "📄 Copying ROM and disk images..."
 cp LC575.ROM "$USER_HOME/macos8/"
 cp DiskTools_MacOS8.image "$USER_HOME/macos8/"
-cp Images/shutdown_MacBackground.png "$USER_HOME/macos8/shutdown.png"
-cp Images/reboot_MacBackground.png "$USER_HOME/macos8/reboot.png"
+cp Images/shutdown.png "$USER_HOME/macos8/shutdown.png"
+cp Images/reboot.png "$USER_HOME/macos8/reboot.png"
 
 if [ ! -f "$USER_HOME/macos8/MacOS8_1.iso" ]; then
   echo "📦 Reassembling Mac OS 8.1 ISO from parts..."
