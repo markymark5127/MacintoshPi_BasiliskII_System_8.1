@@ -100,17 +100,27 @@ $USER_HOME/reboot_overlay.sh
   Control+Alt + r
 EOF
 
-echo "🖥️ Setting up GUI autostart for launch wrapper..."
-if [ ! -f launch_wrapper.sh ]; then
-  echo "❌ Error: launch_wrapper.sh not found in current directory!"
-  exit 1
-fi
-cp launch_wrapper.sh "$USER_HOME/launch_wrapper.sh"
-chmod +x "$USER_HOME/launch_wrapper.sh"
-
+echo "🖥️ Setting up GUI autostart..."
 AUTOSTART_DIR="$USER_HOME/.config/lxsession/LXDE-pi"
 mkdir -p "$AUTOSTART_DIR"
-cat <<EOF > "$AUTOSTART_DIR/autostart"
+
+if $MINECRAFT_MODE; then
+  if [ ! -f launch_wrapper.sh ]; then
+    echo "❌ Error: launch_wrapper.sh not found in current directory!"
+    exit 1
+  fi
+  cp launch_wrapper.sh "$USER_HOME/launch_wrapper.sh"
+  chmod +x "$USER_HOME/launch_wrapper.sh"
+  echo "@$USER_HOME/launch_wrapper.sh" >> "$AUTOSTART_DIR/autostart"
+
+  if [ -f "$USER_HOME/Downloads/.launch_minecraft" ]; then
+    sudo chattr +i "$USER_HOME/Downloads/.launch_minecraft"
+  fi
+else
+  echo "@BasiliskII" >> "$AUTOSTART_DIR/autostart"
+fi
+
+cat <<EOF >> "$AUTOSTART_DIR/autostart"
 @xset s off
 @xset -dpms
 @xset s noblank
@@ -118,16 +128,13 @@ cat <<EOF > "$AUTOSTART_DIR/autostart"
 @xbindkeys
 #@lxpanel
 #@pcmanfm
-@$USER_HOME/launch_wrapper.sh
 EOF
 
-# Lock Minecraft trigger if it exists
-if [ -f "$USER_HOME/Downloads/.launch_minecraft" ]; then
-  sudo chattr +i "$USER_HOME/Downloads/.launch_minecraft"
+# Fix file ownership
+sudo chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8" "$USER_HOME"/.basilisk_ii_prefs "$USER_HOME"/.xbindkeysrc "$USER_HOME"/shutdown_overlay.sh "$USER_HOME"/reboot_overlay.sh
+if $MINECRAFT_MODE; then
+  sudo chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/launch_wrapper.sh"
 fi
-
-# Fix file ownership if run via sudo
-sudo chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8" "$USER_HOME"/.basilisk_ii_prefs "$USER_HOME"/launch_wrapper.sh "$USER_HOME"/shutdown_overlay.sh "$USER_HOME"/reboot_overlay.sh "$USER_HOME"/.xbindkeysrc
 
 echo "👤 Enabling autologin to desktop..."
 sudo raspi-config nonint do_boot_behaviour B4
