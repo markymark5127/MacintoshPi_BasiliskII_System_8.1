@@ -98,6 +98,10 @@ echo "⏳ Allocating disk image of ${IMG_MB} MB..."
 truncate -s "${IMG_MB}M" "$USER_HOME/macos8/macos8.img"
 ls -lh "$USER_HOME/macos8/macos8.img"
 
+echo "🧾 Formatting disk image as HFS..."
+hformat -l "MacintoshHD" "$USER_HOME/macos8/macos8.img"
+
+
 echo "📑 Checking Basilisk II prefs file..."
 PREFS_PATH="$USER_HOME/.basilisk_ii_prefs"
 if [ ! -f "$PREFS_PATH" ]; then
@@ -114,7 +118,7 @@ serialb /dev/null
 ether slirp
 udptunnel false
 udpport 6066
-bootdrive 1
+bootdrive 0
 bootdriver 0
 ramsize 134217728
 frameskip 2
