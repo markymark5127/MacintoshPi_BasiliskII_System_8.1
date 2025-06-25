@@ -63,8 +63,15 @@ echo "💽 Creating dynamic macos8.img..."
 TOTAL_MB=$(df --output=avail / | tail -1)
 TOTAL_MB=$((TOTAL_MB / 1024))
 RESERVED_MB=800
+MAX_MB=30720  # 30 GB limit
 IMG_MB=$((TOTAL_MB - RESERVED_MB))
-dd if=/dev/zero of="$USER_HOME/macos8/macos8.img" bs=1M count=$IMG_MB
+if [ "$IMG_MB" -gt "$MAX_MB" ]; then
+  IMG_MB=$MAX_MB
+fi
+
+echo "🧾 Requested disk image size: ${IMG_MB} MB"
+echo "📂 Creating sparse disk image (instantly allocated, grows as needed)..."
+truncate -s "${IMG_MB}M" "$USER_HOME/macos8/macos8.img"
 
 echo "📑 Copying Basilisk II install prefs..."
 cp BasiliskII.install.prefs "$USER_HOME/.basilisk_ii_prefs"
