@@ -8,7 +8,7 @@ This project transforms a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit De
 
 - 🔧 One-command setup via `setup.sh`
 - 🧱 Builds Basilisk II emulator from source (kanjitalk755 fork)
-- 💽 Dynamically creates `macos8.img` using available SD card space
+- 💽 Dynamically creates `macos8.img` as a sparse file using available SD card space
 - 🎮 Preloaded with classic Mac games and educational apps (optional)
 - 🖥️ Fullscreen-only mode (distraction-free for kids)
 - 🔊 Sound support via ALSA
