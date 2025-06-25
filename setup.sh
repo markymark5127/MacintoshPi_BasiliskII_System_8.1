@@ -35,6 +35,10 @@ git clone https://github.com/kanjitalk755/macemu.git
 cd macemu/BasiliskII/src/Unix
 ./autogen.sh
 make -j$(nproc)
+if [ ! -f BasiliskII ]; then
+  echo "❌ BasiliskII build failed. Aborting."
+  exit 1
+fi
 sudo make install
 cd ../../../../
 
@@ -103,8 +107,17 @@ cat <<EOF > "$AUTOSTART_DIR/autostart"
 @xset s noblank
 @unclutter -idle 0
 @xbindkeys
+#@lxpanel
+#@pcmanfm
 @$USER_HOME/launch_wrapper.sh
 EOF
+
+chmod +x "$USER_HOME/launch_wrapper.sh"
+
+    if [ -f "$USER_HOME/Downloads/.launch_minecraft" ]; then
+      sudo chattr +i "$USER_HOME/Downloads/.launch_minecraft"
+    fi
+
 
 echo "👤 Enabling autologin to desktop..."
 sudo raspi-config nonint do_boot_behaviour B4

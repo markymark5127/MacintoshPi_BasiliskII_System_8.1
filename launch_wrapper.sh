@@ -1,11 +1,12 @@
 #!/bin/bash
 
-# Wrapper to toggle between BasiliskII and Minecraft Pi Edition Reborn
 TRIGGER_FILE="$HOME/Downloads/.launch_minecraft"
 MCPI_DIR="$HOME/mcpi-reborn"
 MCPI_APPIMAGE=$(find "$MCPI_DIR" -name 'mcpi-reborn-*.AppImage' | head -n 1)
+if [ -z "$MCPI_APPIMAGE" ]; then
+  echo "⚠️ No AppImage found in $MCPI_DIR. Falling back to mcpi-reborn-client."
+fi
 
-# Ensure shared directory exists
 mkdir -p "$(dirname "$TRIGGER_FILE")"
 
 echo "🌀 Starting kiosk loop (BasiliskII → Minecraft)..."
