@@ -1,13 +1,13 @@
 disk ~/macos8/macos8.img
 extfs ~/Downloads
-screen dga/0/0
-seriala /dev/null
+screen win/800/600
+seriala /dev/cu.BLTH
 serialb /dev/null
 ether slirp
 udptunnel false
 udpport 6066
 rom ~/macos8/LC575.ROM
-bootdrive 0
+bootdrive 1
 bootdriver 0
 ramsize 134217728
 frameskip 2
@@ -26,9 +26,14 @@ jitlazyflush true
 jitinline true
 keyboardtype 5
 keycodes false
+keycodefile
+mousewheelmode 0
+mousewheellines 0
+dsp
+mixer
 ignoresegv true
 idlewait true
-displaycolordepth 0
+displaycolordepth 8
 hotkey 0
 scale_nearest false
 scale_integer false
