@@ -81,36 +81,38 @@ if [ ! -f "$ISO_PATH" ] || ! md5sum -c "$USER_HOME/macos8/MacOS8_1.iso.md5"; the
   echo "🔍 Verifying checksum..."
   md5sum -c "$USER_HOME/macos8/MacOS8_1.iso.md5" || { echo "❌ ISO checksum failed. Aborting."; exit 1; }
 fi
-chmod 644 "$USER_HOME/macos8/MacOS8_1.iso"
-chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8/MacOS8_1.iso"
+chmod 644 "$ISO_PATH"
+chown "$TARGET_USER:$TARGET_USER" "$ISO_PATH"
 
-echo "💽 Creating and formatting macos8.img using dd and hformat..."
+echo "💽 Reconstructing macos8.img from parts..."
 
-TOTAL_MB=$(df --output=avail / | tail -1)
-TOTAL_MB=$((TOTAL_MB / 1024))
-RESERVED_MB=800
-MAX_MB=1024 #temporary size
-IMG_MB=$((TOTAL_MB - RESERVED_MB))
-if [ "$IMG_MB" -gt "$MAX_MB" ]; then
-  IMG_MB=$MAX_MB
-fi
-
+IMG_PARTS_DIR="Drive"
 IMG_PATH="$USER_HOME/macos8/macos8.img"
+MD5_EXPECTED="a2a8c2749940d42b7f0d11dc2aaabd2f"
 
-echo "⏳ Allocating ${IMG_MB}MB with dd..."
-dd if=/dev/zero of="$IMG_PATH" bs=1M count="$IMG_MB" status=progress
+if ls "$IMG_PARTS_DIR"/macos8.img.part_* 1> /dev/null 2>&1; then
+  if [ -f "$IMG_PATH" ]; then
+    echo "⚠️ Existing $IMG_PATH will be overwritten."
+    rm -f "$IMG_PATH"
+  fi
 
-echo "💿 Formatting image with HFS filesystem..."
-if yes | hformat -l "MacintoshHD" "$IMG_PATH"; then
-  echo "✅ hformat completed successfully."
+  echo "📦 Assembling image..."
+  cat "$IMG_PARTS_DIR"/macos8.img.part_* > "$IMG_PATH"
+
+  echo "🔍 Verifying checksum..."
+  MD5_ACTUAL=$(md5sum "$IMG_PATH" | awk '{print $1}')
+  if [ "$MD5_ACTUAL" != "$MD5_EXPECTED" ]; then
+    echo "❌ Checksum mismatch! Expected $MD5_EXPECTED but got $MD5_ACTUAL"
+    exit 1
+  fi
+
+  chmod 644 "$IMG_PATH"
+  chown "$TARGET_USER:$TARGET_USER" "$IMG_PATH"
+  echo "✅ macos8.img successfully assembled and verified."
 else
-  echo "❌ hformat failed. Check if the image is large enough and not locked."
+  echo "❌ Image parts not found in $IMG_PARTS_DIR. Aborting."
   exit 1
 fi
-
-chmod 644 "$IMG_PATH"
-chown "$TARGET_USER:$TARGET_USER" "$IMG_PATH"
-echo "🛠️ Image permissions set."
 
 echo "📑 Checking Basilisk II prefs file..."
 PREFS_PATH="$USER_HOME/.basilisk_ii_prefs"
@@ -225,7 +227,6 @@ if [ -d InstallFiles ]; then
   sudo -u "$TARGET_USER" BasiliskII
   echo "📴 Basilisk II has closed."
   read -p "🕹️ Press Enter to continue setup..."
-
 
   echo "📂 Copying InstallFiles into macos8.img → Applications folder..."
   MNT=$(mktemp -d)
