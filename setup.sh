@@ -74,7 +74,8 @@ echo "📂 Creating sparse disk image (instantly allocated, grows as needed)..."
 truncate -s "${IMG_MB}M" "$USER_HOME/macos8/macos8.img"
 
 echo "📑 Copying Basilisk II install prefs..."
-cp BasiliskII.install.prefs "$USER_HOME/.basilisk_ii_prefs"
+# Force overwrite to ensure fresh install settings
+cp -f BasiliskII.install.prefs "$USER_HOME/.basilisk_ii_prefs"
 
 echo "🎛️ Creating overlay scripts..."
 cp shutdown_overlay.sh "$USER_HOME/shutdown_overlay.sh"
@@ -145,7 +146,8 @@ if [ -d InstallFiles ]; then
   sudo umount "$MNT"
   rmdir "$MNT"
 fi
-cp BasiliskII.final.prefs "$USER_HOME/.basilisk_ii_prefs"
+# Overwrite any existing prefs to finalize configuration
+cp -f BasiliskII.final.prefs "$USER_HOME/.basilisk_ii_prefs"
 
 echo "✅ Setup complete. Rebooting..."
 sleep 5
