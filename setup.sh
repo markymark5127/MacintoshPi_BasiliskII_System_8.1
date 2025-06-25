@@ -22,8 +22,7 @@ sudo apt install -y build-essential libsdl2-dev libsdl2-image-dev git hfsutils u
 
 if $MINECRAFT_MODE; then
   echo "🧱 Installing Minecraft Pi Edition Reborn dependencies..."
-  sudo apt install -y cmake g++ libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev \
-    libsdl2-ttf-dev libcurl4-openssl-dev libglew-dev
+  sudo apt install -y cmake g++ libsdl2-mixer-dev libsdl2-ttf-dev libcurl4-openssl-dev libglew-dev
   mkdir -p "$USER_HOME/mcpi-reborn"
   cd "$USER_HOME/mcpi-reborn"
   git clone https://github.com/TheBrokenRail/mcpi-reborn.git .
@@ -53,19 +52,13 @@ if [ ! -f "$USER_HOME/macos8/MacOS8_1.iso" ]; then
   cat MacOS8_1/MacOS8_1.iso.part_* > "$USER_HOME/macos8/MacOS8_1.iso"
   echo "🔍 Verifying checksum..."
   echo "db5ec7aedcb4a3b8228c262cebcb44cf  $USER_HOME/macos8/MacOS8_1.iso" > "$USER_HOME/macos8/MacOS8_1.iso.md5"
-  if md5sum -c "$USER_HOME/macos8/MacOS8_1.iso.md5"; then
-    echo "✅ ISO checksum verified."
-  else
-    echo "❌ Checksum mismatch! Aborting setup."
-    exit 1
-  fi
+  md5sum -c "$USER_HOME/macos8/MacOS8_1.iso.md5"
 fi
 
 echo "💽 Creating dynamic macos8.img..."
 TOTAL_MB=$(df --output=avail / | tail -1)
 TOTAL_MB=$((TOTAL_MB / 1024))
-RESERVED_MB=500
-if $MINECRAFT_MODE; then RESERVED_MB=800; fi
+RESERVED_MB=800
 IMG_MB=$((TOTAL_MB - RESERVED_MB))
 dd if=/dev/zero of="$USER_HOME/macos8/macos8.img" bs=1M count=$IMG_MB
 mkfs.hfs "$USER_HOME/macos8/macos8.img"
@@ -79,9 +72,8 @@ if [ -d InstallFiles ]; then
     [[ "$name" != "Minecraft" ]] && hcopy -r "$item" ":Applications:"
   done
   if $MINECRAFT_MODE; then
-    echo "🧱 Minecraft mode — copying Minecraft launcher files..."
     [[ -f InstallFiles/Minecraft/.launch_minecraft ]] && hcopy InstallFiles/Minecraft/.launch_minecraft ":Applications/"
-    [[ -d InstallFiles/Minecraft/Minecraft ]] && hcopy -r InstallFiles/Minecraft/Minecraft ":Desktop/"
+    [[ -d InstallFiles/Minecraft/Minecraft ]] && hcopy -r InstallFiles/Minecraft/Minecraft ":Desktop:"
   fi
   humount
 fi
@@ -94,7 +86,6 @@ cp shutdown_overlay.sh "$USER_HOME/shutdown_overlay.sh"
 cp reboot_overlay.sh "$USER_HOME/reboot_overlay.sh"
 chmod +x "$USER_HOME/shutdown_overlay.sh" "$USER_HOME/reboot_overlay.sh"
 
-echo "🧠 Setting up xbindkeys hotkeys..."
 cat <<EOF > "$USER_HOME/.xbindkeysrc"
 $USER_HOME/shutdown_overlay.sh
   Control+Alt + s
@@ -103,7 +94,7 @@ $USER_HOME/reboot_overlay.sh
   Control+Alt + r
 EOF
 
-echo "🖥️ Setting up LXDE GUI autostart for BasiliskII..."
+echo "🖥️ Setting up GUI autostart for launch wrapper..."
 AUTOSTART_DIR="$USER_HOME/.config/lxsession/LXDE-pi"
 mkdir -p "$AUTOSTART_DIR"
 cat <<EOF > "$AUTOSTART_DIR/autostart"
@@ -112,20 +103,16 @@ cat <<EOF > "$AUTOSTART_DIR/autostart"
 @xset s noblank
 @unclutter -idle 0
 @xbindkeys
-@BasiliskII
+@$USER_HOME/launch_wrapper.sh
 EOF
 
 echo "👤 Enabling autologin to desktop..."
 sudo raspi-config nonint do_boot_behaviour B4
 
-echo "🔧 Customizing boot splash for vintage Apple logo..."
-sudo sed -i 's/^disable_splash=1/#disable_splash=1/' /boot/config.txt
-sudo sed -i '/^#*disable_splash=.*/d' /boot/config.txt
+echo "🔧 Configuring splash screen (optional)..."
+sudo sed -i '/^disable_splash/d' /boot/config.txt
 echo "disable_splash=1" | sudo tee -a /boot/config.txt
-
-# Optional: Replace splash screen with Apple image
 if [ -f apple_splash.png ]; then
-  echo "🖼️ Setting vintage Apple splash image..."
   sudo apt install -y plymouth plymouth-themes
   sudo cp apple_splash.png /usr/share/plymouth/themes/pix/splash.png
 fi
@@ -135,10 +122,9 @@ if ! sudo grep -q '/sbin/shutdown' /etc/sudoers; then
   echo 'pi ALL=(ALL) NOPASSWD: /sbin/shutdown, /sbin/reboot' | sudo tee -a /etc/sudoers
 fi
 
-# Final install cleanup
 read -p "🖥️ Press ENTER after completing Mac OS 8.1 installation to finalize setup..." temp
 cp BasiliskII.final.prefs "$USER_HOME/.basilisk_ii_prefs"
 
-echo "✅ Setup complete. Rebooting into Mac OS 8.1 environment..."
+echo "✅ Setup complete. Rebooting..."
 sleep 5
 sudo reboot

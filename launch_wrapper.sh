@@ -1,32 +1,40 @@
-#  launch_wrapper.sh
-#  Handles seamless switching between Basilisk II and Minecraft Pi Edition Reborn
+#!/bin/bash
 
-# Shared folder inside the emulator maps to the Pi's Downloads directory
+# Wrapper to toggle between BasiliskII and Minecraft Pi Edition Reborn
 TRIGGER_FILE="$HOME/Downloads/.launch_minecraft"
+MCPI_DIR="$HOME/mcpi-reborn"
+MCPI_APPIMAGE=$(find "$MCPI_DIR" -name 'mcpi-reborn-*.AppImage' | head -n 1)
 
-# Ensure trigger file directory exists
+# Ensure shared directory exists
 mkdir -p "$(dirname "$TRIGGER_FILE")"
 
+echo "🌀 Starting kiosk loop (BasiliskII → Minecraft)..."
+
 while true; do
-  echo "🧠 Launching Basilisk II..."
+  echo "🧠 Launching BasiliskII..."
   BasiliskII &
-  EMULATOR_PID=$!
+  EMU_PID=$!
 
-  # Wait until BasiliskII exits
-  wait $EMULATOR_PID
+  wait $EMU_PID
+  echo "🧱 BasiliskII exited. Checking for Minecraft trigger..."
 
-  echo "🔍 Checking for Minecraft trigger..."
   if [ -f "$TRIGGER_FILE" ]; then
-  echo "🧱 Launching Minecraft Pi Edition Reborn..."
+    echo "🧱 Trigger found — launching Minecraft Pi Edition Reborn..."
     rm "$TRIGGER_FILE"
 
-  # Launch Minecraft Pi Edition Reborn
-  "$HOME/mcpi-reborn/mcpi-reborn-client" &
-    wait
+    if [ -x "$MCPI_APPIMAGE" ]; then
+      "$MCPI_APPIMAGE" &
+    elif [ -x "$MCPI_DIR/mcpi-reborn-client" ]; then
+      "$MCPI_DIR/mcpi-reborn-client" &
+    else
+      echo "❌ Minecraft executable not found. Skipping..."
+      continue
+    fi
 
-    echo "🔁 Returning to Basilisk II..."
+    wait
+    echo "🔁 Returning to BasiliskII..."
   else
-    echo "❌ Basilisk II exited without Minecraft trigger. Exiting..."
+    echo "❌ No trigger file. Exiting kiosk loop..."
     break
   fi
 done
