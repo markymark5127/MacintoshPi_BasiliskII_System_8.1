@@ -13,14 +13,12 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# Determine the non-root user running this script so we can place files in the
-# correct home directory when executed via sudo.
 TARGET_USER="${SUDO_USER:-$USER}"
 USER_HOME=$(eval echo "~$TARGET_USER")
 
 echo "🔧 Installing dependencies..."
 sudo apt update
-sudo apt install -y build-essential libsdl2-dev libsdl2-image-dev git hfsutils xinit x11-xserver-utils unclutter feh xbindkeys alsa-utils autoconf automake libtool libmpfr-dev
+sudo apt install -y build-essential libsdl2-dev libsdl2-image-dev git hfsutils unclutter xbindkeys alsa-utils autoconf automake libtool libmpfr-dev
 
 if $MINECRAFT_MODE; then
   echo "🧱 Installing Minecraft Pi Edition Reborn dependencies..."
@@ -50,7 +48,6 @@ cp DiskTools_MacOS8.image "$USER_HOME/macos8/"
 cp shutdown.png "$USER_HOME/macos8/"
 cp reboot.png "$USER_HOME/macos8/"
 
-# Reassemble Mac OS 8.1 ISO from parts if not already present
 if [ ! -f "$USER_HOME/macos8/MacOS8_1.iso" ]; then
   echo "📦 Reassembling Mac OS 8.1 ISO from parts..."
   cat MacOS8_1/MacOS8_1.iso.part_* > "$USER_HOME/macos8/MacOS8_1.iso"
@@ -68,47 +65,26 @@ echo "💽 Creating dynamic macos8.img..."
 TOTAL_MB=$(df --output=avail / | tail -1)
 TOTAL_MB=$((TOTAL_MB / 1024))
 RESERVED_MB=500
-
-if $MINECRAFT_MODE; then
-  RESERVED_MB=800  # reserve more space if Minecraft is used
-fi
-
+if $MINECRAFT_MODE; then RESERVED_MB=800; fi
 IMG_MB=$((TOTAL_MB - RESERVED_MB))
 dd if=/dev/zero of="$USER_HOME/macos8/macos8.img" bs=1M count=$IMG_MB
 mkfs.hfs "$USER_HOME/macos8/macos8.img"
 
 if [ -d InstallFiles ]; then
   echo "📂 Copying InstallFiles into macos8.img → Applications folder..."
-  command -v hmount >/dev/null 2>&1 || { echo "❌ hfsutils not found in PATH. Aborting."; exit 1; }
-
   hmount "$USER_HOME/macos8/macos8.img"
-
-  if ! hls ":Applications" > /dev/null 2>&1; then
-    echo "📁 Applications folder not found. Creating it..."
-    hmkdir ":Applications"
-  fi
-
-  echo "📄 Copying general apps to :Applications..."
+  if ! hls ":Applications" > /dev/null 2>&1; then hmkdir ":Applications"; fi
   for item in InstallFiles/*; do
     name=$(basename "$item")
-    if [[ "$name" != "Minecraft" ]]; then
-      hcopy -r "$item" ":Applications:"
-    fi
+    [[ "$name" != "Minecraft" ]] && hcopy -r "$item" ":Applications:"
   done
-
   if $MINECRAFT_MODE; then
     echo "🧱 Minecraft mode — copying Minecraft launcher files..."
-    if [ -f InstallFiles/Minecraft/.launch_minecraft ]; then
-      hcopy InstallFiles/Minecraft/.launch_minecraft ":Applications:"
-    fi
-    if [ -d InstallFiles/Minecraft/Minecraft ]; then
-      hcopy -r InstallFiles/Minecraft/Minecraft ":Desktop:"
-    fi
+    [[ -f InstallFiles/Minecraft/.launch_minecraft ]] && hcopy InstallFiles/Minecraft/.launch_minecraft ":Applications/"
+    [[ -d InstallFiles/Minecraft/Minecraft ]] && hcopy -r InstallFiles/Minecraft/Minecraft ":Desktop/"
   fi
-
   humount
 fi
-
 
 echo "📑 Copying Basilisk II install prefs..."
 cp BasiliskII.install.prefs "$USER_HOME/.basilisk_ii_prefs"
@@ -127,43 +103,31 @@ $USER_HOME/reboot_overlay.sh
   Control+Alt + r
 EOF
 
-echo "🖥️ Setting up X autostart..."
-if $MINECRAFT_MODE; then
-  echo "➡️ Using Minecraft-aware launch wrapper..."
-  cp launch_wrapper.sh "$USER_HOME/launch_wrapper.sh"
-  chmod +x "$USER_HOME/launch_wrapper.sh"
-
-  cat <<EOF > "$USER_HOME/.xinitrc"
-#!/bin/bash
-xset s off
-xset -dpms
-xset s noblank
-unclutter -idle 0 &
-xbindkeys &
-\$USER_HOME/launch_wrapper.sh
+echo "🖥️ Setting up LXDE GUI autostart for BasiliskII..."
+AUTOSTART_DIR="$USER_HOME/.config/lxsession/LXDE-pi"
+mkdir -p "$AUTOSTART_DIR"
+cat <<EOF > "$AUTOSTART_DIR/autostart"
+@xset s off
+@xset -dpms
+@xset s noblank
+@unclutter -idle 0
+@xbindkeys
+@BasiliskII
 EOF
-else
-  echo "➡️ Using standard BasiliskII launch..."
-  cat <<EOF > "$USER_HOME/.xinitrc"
-#!/bin/bash
-xset s off
-xset -dpms
-xset s noblank
-unclutter -idle 0 &
-xbindkeys &
-BasiliskII
-EOF
-fi
 
-chmod +x "$USER_HOME/.xinitrc"
+echo "👤 Enabling autologin to desktop..."
+sudo raspi-config nonint do_boot_behaviour B4
 
-echo "👤 Enabling autologin to console..."
-if ! sudo raspi-config nonint do_boot_behaviour B2; then
-  echo "⚠️ Autologin setup failed. You may need to enable it manually via raspi-config."
-fi
+echo "🔧 Customizing boot splash for vintage Apple logo..."
+sudo sed -i 's/^disable_splash=1/#disable_splash=1/' /boot/config.txt
+sudo sed -i '/^#*disable_splash=.*/d' /boot/config.txt
+echo "disable_splash=1" | sudo tee -a /boot/config.txt
 
-if ! grep -Fxq "startx" "$USER_HOME/.bash_profile"; then
-  echo "startx" >> "$USER_HOME/.bash_profile"
+# Optional: Replace splash screen with Apple image
+if [ -f apple_splash.png ]; then
+  echo "🖼️ Setting vintage Apple splash image..."
+  sudo apt install -y plymouth plymouth-themes
+  sudo cp apple_splash.png /usr/share/plymouth/themes/pix/splash.png
 fi
 
 echo "🔐 Setting passwordless sudo for shutdown/reboot..."
@@ -171,12 +135,10 @@ if ! sudo grep -q '/sbin/shutdown' /etc/sudoers; then
   echo 'pi ALL=(ALL) NOPASSWD: /sbin/shutdown, /sbin/reboot' | sudo tee -a /etc/sudoers
 fi
 
-# Post-install cleanup prompt
+# Final install cleanup
 read -p "🖥️ Press ENTER after completing Mac OS 8.1 installation to finalize setup..." temp
 cp BasiliskII.final.prefs "$USER_HOME/.basilisk_ii_prefs"
 
-echo "✅ Installation media removed from prefs. Ready to boot into Mac OS 8.1."
-
-echo "✅ Setup complete. Rebooting..."
+echo "✅ Setup complete. Rebooting into Mac OS 8.1 environment..."
 sleep 5
 sudo reboot
