@@ -18,7 +18,8 @@ USER_HOME=$(eval echo "~$TARGET_USER")
 
 echo "🔧 Installing dependencies..."
 sudo apt update
-sudo apt install -y build-essential libsdl2-dev libsdl2-image-dev git hfsutils unclutter xbindkeys alsa-utils autoconf automake libtool libmpfr-dev feh
+sudo apt install -y build-essential libsdl2-dev libsdl2-image-dev git hfsutils hfsprogs \
+  unclutter xbindkeys alsa-utils autoconf automake libtool libmpfr-dev feh
 
 if $MINECRAFT_MODE; then
   echo "🧱 Installing Minecraft Pi Edition Reborn dependencies..."
@@ -59,9 +60,17 @@ cp LC575.ROM "$USER_HOME/macos8/LC575.ROM"
 chmod 644 "$USER_HOME/macos8/LC575.ROM"
 chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8/LC575.ROM"
 
-cp DiskTools_MacOS8.image "$USER_HOME/macos8/"
+cp DiskTools_MacOS8.image "$USER_HOME/macos8/DiskTools_MacOS8.image"
+chmod 644 "$USER_HOME/macos8/DiskTools_MacOS8.image"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8/DiskTools_MacOS8.image"
+
 cp Images/shutdown.png "$USER_HOME/macos8/shutdown.png"
+chmod 644 "$USER_HOME/macos8/shutdown.png"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8/shutdown.png"
+
 cp Images/reboot.png "$USER_HOME/macos8/reboot.png"
+chmod 644 "$USER_HOME/macos8/reboot.png"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8/reboot.png"
 
 echo "📦 Ensuring Mac OS 8.1 ISO is present and verified..."
 ISO_PATH="$USER_HOME/macos8/MacOS8_1.iso"
@@ -83,14 +92,35 @@ if [ "$IMG_MB" -gt "$MAX_MB" ]; then
   IMG_MB=$MAX_MB
 fi
 
-echo "🧾 Requested disk image size: ${IMG_MB} MB"
+echo "⏳ Allocating disk image of ${IMG_MB} MB..."
 truncate -s "${IMG_MB}M" "$USER_HOME/macos8/macos8.img"
 ls -lh "$USER_HOME/macos8/macos8.img"
 
-echo "📑 Setting up Basilisk II prefs..."
-cp -f BasiliskII.install.prefs "$USER_HOME/.basilisk_ii_prefs"
-sed -i '/^rom /d' "$USER_HOME/.basilisk_ii_prefs"
-echo "rom $USER_HOME/macos8/LC575.ROM" >> "$USER_HOME/.basilisk_ii_prefs"
+echo "📑 Preparing Basilisk II prefs..."
+PREFS_PATH="$USER_HOME/.basilisk_ii_prefs"
+
+if [ ! -f "$PREFS_PATH" ]; then
+  cp -f BasiliskII.install.prefs "$PREFS_PATH"
+fi
+
+# Update key paths
+sed -i '/^rom /d' "$PREFS_PATH"
+sed -i '/^disk /d' "$PREFS_PATH"
+sed -i '/^cdrom /d' "$PREFS_PATH"
+sed -i '/^nosound /d' "$PREFS_PATH"
+sed -i '/^nocdrom /d' "$PREFS_PATH"
+
+cat <<EOF >> "$PREFS_PATH"
+rom $USER_HOME/macos8/LC575.ROM
+disk $USER_HOME/macos8/DiskTools_MacOS8.image
+disk $USER_HOME/macos8/macos8.img
+cdrom $USER_HOME/macos8/MacOS8_1.iso
+nosound true
+nocdrom true
+EOF
+
+chown "$TARGET_USER:$TARGET_USER" "$PREFS_PATH"
+chmod 644 "$PREFS_PATH"
 
 echo "🎛️ Creating overlay scripts..."
 cp shutdown_overlay.sh "$USER_HOME/shutdown_overlay.sh"
@@ -121,17 +151,8 @@ else
   echo "@BasiliskII" >> "$AUTOSTART_DIR/autostart"
 fi
 
-cat <<EOF >> "$AUTOSTART_DIR/autostart"
-@xset s off
-@xset -dpms
-@xset s noblank
-@unclutter -idle 0
-@xbindkeys
-#@lxpanel
-#@pcmanfm
-EOF
-
-chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8" "$USER_HOME/.basilisk_ii_prefs" "$USER_HOME/.xbindkeysrc" "$USER_HOME"/shutdown_overlay.sh "$USER_HOME"/reboot_overlay.sh
+chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8" "$USER_HOME/.xbindkeysrc" \
+  "$USER_HOME"/shutdown_overlay.sh "$USER_HOME"/reboot_overlay.sh
 if $MINECRAFT_MODE; then
   chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/launch_wrapper.sh"
 fi
@@ -180,9 +201,6 @@ if [ -d InstallFiles ]; then
 else
   echo "⚠️ No InstallFiles directory found. Skipping app injection step."
 fi
-
-cp -f BasiliskII.final.prefs "$USER_HOME/.basilisk_ii_prefs"
-chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.basilisk_ii_prefs"
 
 echo "✅ Setup complete. Rebooting..."
 sleep 5
