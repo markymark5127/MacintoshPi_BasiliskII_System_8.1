@@ -1,12 +1,12 @@
-disk ~/macos8/macos8.img
-extfs ~/Downloads
+disk /home/macos8/macos8.img
+extfs /home/Downloads
 screen win/800/600
 seriala /dev/cu.BLTH
 serialb /dev/null
 ether slirp
 udptunnel false
 udpport 6066
-rom ~/macos8/LC575.ROM
+rom /home/macos8/LC575.ROM
 bootdrive 1
 bootdriver 0
 ramsize 134217728

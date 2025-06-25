@@ -96,31 +96,16 @@ echo "⏳ Allocating disk image of ${IMG_MB} MB..."
 truncate -s "${IMG_MB}M" "$USER_HOME/macos8/macos8.img"
 ls -lh "$USER_HOME/macos8/macos8.img"
 
-echo "📑 Preparing Basilisk II prefs..."
+echo "📑 Checking Basilisk II prefs file..."
 PREFS_PATH="$USER_HOME/.basilisk_ii_prefs"
-
 if [ ! -f "$PREFS_PATH" ]; then
+  echo "📝 No prefs file found. Copying default..."
   cp -f BasiliskII.install.prefs "$PREFS_PATH"
+  chown "$TARGET_USER:$TARGET_USER" "$PREFS_PATH"
+  chmod 644 "$PREFS_PATH"
+else
+  echo "🧠 Prefs file already exists. Leaving it untouched."
 fi
-
-# Update key paths
-sed -i '/^rom /d' "$PREFS_PATH"
-sed -i '/^disk /d' "$PREFS_PATH"
-sed -i '/^cdrom /d' "$PREFS_PATH"
-sed -i '/^nosound /d' "$PREFS_PATH"
-sed -i '/^nocdrom /d' "$PREFS_PATH"
-
-cat <<EOF >> "$PREFS_PATH"
-rom $USER_HOME/macos8/LC575.ROM
-disk $USER_HOME/macos8/DiskTools_MacOS8.image
-disk $USER_HOME/macos8/macos8.img
-cdrom $USER_HOME/macos8/MacOS8_1.iso
-nosound true
-nocdrom true
-EOF
-
-chown "$TARGET_USER:$TARGET_USER" "$PREFS_PATH"
-chmod 644 "$PREFS_PATH"
 
 echo "🎛️ Creating overlay scripts..."
 cp shutdown_overlay.sh "$USER_HOME/shutdown_overlay.sh"
