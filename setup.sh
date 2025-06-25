@@ -101,8 +101,54 @@ ls -lh "$USER_HOME/macos8/macos8.img"
 echo "📑 Checking Basilisk II prefs file..."
 PREFS_PATH="$USER_HOME/.basilisk_ii_prefs"
 if [ ! -f "$PREFS_PATH" ]; then
-  echo "📝 No prefs file found. Copying default..."
-  cp -f BasiliskII.install.prefs "$PREFS_PATH"
+  echo "📝 Creating default prefs file..."
+  cat <<EOF > "$PREFS_PATH"
+rom $USER_HOME/macos8/LC575.ROM
+disk $USER_HOME/macos8/DiskTools_MacOS8.image
+disk $USER_HOME/macos8/MacOS8_1.iso
+disk $USER_HOME/macos8/macos8.img
+extfs $USER_HOME/Downloads
+screen win/800/600
+seriala /dev/cu.BLTH
+serialb /dev/null
+ether slirp
+udptunnel false
+udpport 6066
+bootdrive 1
+bootdriver 0
+ramsize 134217728
+frameskip 2
+modelid 14
+cpu 4
+fpu true
+nocdrom false
+nosound false
+noclipconversion false
+nogui true
+jit false
+jitfpu true
+jitdebug false
+jitcachesize 8192
+jitlazyflush true
+jitinline true
+keyboardtype 5
+keycodes false
+mousewheelmode 0
+mousewheellines 0
+ignoresegv true
+idlewait true
+displaycolordepth 8
+hotkey 0
+scale_nearest false
+scale_integer false
+yearofs 0
+dayofs 0
+swap_opt_cmd false
+sound_buffer 0
+name_encoding 0
+delay 0
+init_grab false
+EOF
   chown "$TARGET_USER:$TARGET_USER" "$PREFS_PATH"
   chmod 644 "$PREFS_PATH"
 else
