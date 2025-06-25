@@ -84,7 +84,8 @@ fi
 chmod 644 "$USER_HOME/macos8/MacOS8_1.iso"
 chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8/MacOS8_1.iso"
 
-echo "💽 Creating dynamic macos8.img..."
+echo "💽 Creating and formatting macos8.img using dd and hformat..."
+
 TOTAL_MB=$(df --output=avail / | tail -1)
 TOTAL_MB=$((TOTAL_MB / 1024))
 RESERVED_MB=800
@@ -94,12 +95,16 @@ if [ "$IMG_MB" -gt "$MAX_MB" ]; then
   IMG_MB=$MAX_MB
 fi
 
-echo "⏳ Allocating disk image of ${IMG_MB} MB using dd..."
-dd if=/dev/zero of="$USER_HOME/macos8/macos8.img" bs=1M count=$IMG_MB status=progress
-ls -lh "$USER_HOME/macos8/macos8.img"
+IMG_PATH="$USER_HOME/macos8/macos8.img"
 
-echo "🧾 Formatting disk image as HFS..."
-hformat -l "MacintoshHD" "$USER_HOME/macos8/macos8.img"
+echo "⏳ Allocating ${IMG_MB}MB with dd..."
+dd if=/dev/zero of="$IMG_PATH" bs=1M count="$IMG_MB" status=progress
+
+echo "💿 Formatting image with HFS filesystem..."
+yes | hformat -l "MacintoshHD" "$IMG_PATH"
+
+chmod 644 "$IMG_PATH"
+chown "$TARGET_USER:$TARGET_USER" "$IMG_PATH"
 
 
 echo "📑 Checking Basilisk II prefs file..."
@@ -213,7 +218,9 @@ fi
 if [ -d InstallFiles ]; then
   echo "🚀 Launching Basilisk II to begin installation..."
   sudo -u "$TARGET_USER" BasiliskII
-  echo "✅ Basilisk II closed. Continuing setup..."
+  echo "📴 Basilisk II has closed."
+  read -p "🕹️ Press Enter to continue setup..."
+
 
   echo "📂 Copying InstallFiles into macos8.img → Applications folder..."
   MNT=$(mktemp -d)
