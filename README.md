@@ -21,6 +21,18 @@ This project transforms a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Li
 
 ---
 
+### 🚀 Quick Install
+
+Execute the commands below on a Raspberry Pi running Raspberry Pi OS 64‑bit. This clones the repo and runs the setup script in one shot:
+
+```bash
+git clone https://github.com/markymark5127/MacintoshPi_BasiliskII_System_8.1.git \
+  && cd MacintoshPi_BasiliskII_System_8.1 \
+  && sudo ./setup.sh --with-minecraft
+```
+The installer handles all dependencies and will automatically copy the `Minecraft` launcher into the emulated Mac if you use the `--with-minecraft` flag.
+
+
 ## 📦 Included Files
 
 | File/Folder                | Description                                               |

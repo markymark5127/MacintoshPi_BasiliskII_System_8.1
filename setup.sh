@@ -18,7 +18,7 @@ USER_HOME=$(eval echo "~$TARGET_USER")
 
 echo "🔧 Installing dependencies..."
 sudo apt update
-sudo apt install -y build-essential libsdl2-dev libsdl2-image-dev git hfsutils unclutter xbindkeys alsa-utils autoconf automake libtool libmpfr-dev
+sudo apt install -y build-essential libsdl2-dev libsdl2-image-dev git hfsutils unclutter xbindkeys alsa-utils autoconf automake libtool libmpfr-dev feh
 
 if $MINECRAFT_MODE; then
   echo "🧱 Installing Minecraft Pi Edition Reborn dependencies..."
