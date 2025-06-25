@@ -65,22 +65,6 @@ TOTAL_MB=$((TOTAL_MB / 1024))
 RESERVED_MB=800
 IMG_MB=$((TOTAL_MB - RESERVED_MB))
 dd if=/dev/zero of="$USER_HOME/macos8/macos8.img" bs=1M count=$IMG_MB
-mkfs.hfs "$USER_HOME/macos8/macos8.img"
-
-if [ -d InstallFiles ]; then
-  echo "📂 Copying InstallFiles into macos8.img → Applications folder..."
-  hmount "$USER_HOME/macos8/macos8.img"
-  if ! hls ":Applications" > /dev/null 2>&1; then hmkdir ":Applications"; fi
-  for item in InstallFiles/*; do
-    name=$(basename "$item")
-    [[ "$name" != "Minecraft" ]] && hcopy -r "$item" ":Applications:"
-  done
-  if $MINECRAFT_MODE; then
-    [[ -f InstallFiles/Minecraft/.launch_minecraft ]] && hcopy InstallFiles/Minecraft/.launch_minecraft ":Applications/"
-    [[ -d InstallFiles/Minecraft/Minecraft ]] && hcopy -r InstallFiles/Minecraft/Minecraft ":Desktop:"
-  fi
-  humount
-fi
 
 echo "📑 Copying Basilisk II install prefs..."
 cp BasiliskII.install.prefs "$USER_HOME/.basilisk_ii_prefs"
@@ -136,6 +120,24 @@ if ! sudo grep -q '/sbin/shutdown' /etc/sudoers; then
 fi
 
 read -p "🖥️ Press ENTER after completing Mac OS 8.1 installation to finalize setup..." temp
+if [ -d InstallFiles ]; then
+  echo "📂 Copying InstallFiles into macos8.img → Applications folder..."
+  MNT=$(mktemp -d)
+  if ! sudo mount -o loop,uid="$TARGET_USER",gid="$TARGET_USER" -t hfsplus "$USER_HOME/macos8/macos8.img" "$MNT" 2>/dev/null; then
+    sudo mount -o loop,uid="$TARGET_USER",gid="$TARGET_USER" -t hfs "$USER_HOME/macos8/macos8.img" "$MNT"
+  fi
+  mkdir -p "$MNT/Applications"
+  for item in InstallFiles/*; do
+    name=$(basename "$item")
+    [[ "$name" != "Minecraft" ]] && sudo cp -r "$item" "$MNT/Applications/"
+  done
+  if $MINECRAFT_MODE; then
+    [[ -f InstallFiles/Minecraft/.launch_minecraft ]] && sudo cp InstallFiles/Minecraft/.launch_minecraft "$MNT/Applications/"
+    [[ -d InstallFiles/Minecraft/Minecraft ]] && sudo cp -r InstallFiles/Minecraft/Minecraft "$MNT/Desktop/"
+  fi
+  sudo umount "$MNT"
+  rmdir "$MNT"
+fi
 cp BasiliskII.final.prefs "$USER_HOME/.basilisk_ii_prefs"
 
 echo "✅ Setup complete. Rebooting..."

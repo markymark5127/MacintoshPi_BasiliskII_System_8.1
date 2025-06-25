@@ -83,9 +83,9 @@ The installer handles all dependencies and will automatically copy the `Minecraf
 
 4. After reboot, Mac OS 8.1 will launch in fullscreen automatically.
 
-5. Inside the emulator, complete the OS installation normally.
+5. Inside the emulator, initialize the new disk and complete the OS installation.
 
-6. When prompted in the terminal, press ENTER to finalize setup (removes CD/floppy and reboots into your installed Mac OS 8.1 system).
+6. When the emulator is closed, return to the terminal and press ENTER to copy extra applications and finalize setup (removes CD/floppy and reboots into your installed Mac OS 8.1 system).
 
 ---
 
