@@ -153,6 +153,8 @@ if ! sudo grep -q '/sbin/shutdown' /etc/sudoers; then
 fi
 
 if [ -d InstallFiles ]; then
+  echo "🚀 Launching Basilisk II to begin installation..."
+  sudo -u "$TARGET_USER" BasiliskII &
   read -p "🖥️ Press ENTER after completing Mac OS 8.1 installation to finalize setup..." temp
   echo "📂 Copying InstallFiles into macos8.img → Applications folder..."
   MNT=$(mktemp -d)
