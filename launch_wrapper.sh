@@ -1,5 +1,5 @@
 #  launch_wrapper.sh
-#  Handles seamless switching between Basilisk II and Minecraft Pi Edition
+#  Handles seamless switching between Basilisk II and Minecraft Pi Edition Reborn
 
 # Shared folder inside the emulator maps to the Pi's Downloads directory
 TRIGGER_FILE="$HOME/Downloads/.launch_minecraft"
@@ -17,11 +17,11 @@ while true; do
 
   echo "🔍 Checking for Minecraft trigger..."
   if [ -f "$TRIGGER_FILE" ]; then
-    echo "🧱 Launching Minecraft Pi Edition..."
+  echo "🧱 Launching Minecraft Pi Edition Reborn..."
     rm "$TRIGGER_FILE"
 
-    # Launch Minecraft Pi Edition
-    "$HOME/mcpi/minecraft-pi" &
+  # Launch Minecraft Pi Edition Reborn
+  "$HOME/mcpi-reborn/mcpi-reborn-client" &
     wait
 
     echo "🔁 Returning to Basilisk II..."

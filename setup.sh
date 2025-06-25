@@ -23,13 +23,13 @@ sudo apt update
 sudo apt install -y build-essential libsdl2-dev libsdl2-image-dev git hfsutils xinit x11-xserver-utils unclutter feh xbindkeys alsa-utils autoconf automake libtool libmpfr-dev
 
 if $MINECRAFT_MODE; then
-  echo "🧱 Installing Minecraft Pi Edition dependencies..."
-  sudo apt install -y mesa-utils libgl1-mesa-dri libgles2
-  mkdir -p "$USER_HOME/mcpi"
-  cd "$USER_HOME/mcpi"
-  wget https://archive.org/download/minecraft-pi/minecraft-pi-0.1.1.tar.gz
-  tar -xzf minecraft-pi-0.1.1.tar.gz
-  chmod +x minecraft-pi
+  echo "🧱 Installing Minecraft Pi Edition Reborn dependencies..."
+  sudo apt install -y cmake g++ libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev \
+    libsdl2-ttf-dev libcurl4-openssl-dev libglew-dev
+  mkdir -p "$USER_HOME/mcpi-reborn"
+  cd "$USER_HOME/mcpi-reborn"
+  git clone https://github.com/TheBrokenRail/mcpi-reborn.git .
+  ./scripts/install.sh
   cd -
 fi
 
