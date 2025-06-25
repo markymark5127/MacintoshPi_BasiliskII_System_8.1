@@ -81,6 +81,8 @@ if [ ! -f "$ISO_PATH" ] || ! md5sum -c "$USER_HOME/macos8/MacOS8_1.iso.md5"; the
   echo "🔍 Verifying checksum..."
   md5sum -c "$USER_HOME/macos8/MacOS8_1.iso.md5" || { echo "❌ ISO checksum failed. Aborting."; exit 1; }
 fi
+chmod 644 "$USER_HOME/macos8/MacOS8_1.iso"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8/MacOS8_1.iso"
 
 echo "💽 Creating dynamic macos8.img..."
 TOTAL_MB=$(df --output=avail / | tail -1)
