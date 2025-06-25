@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 TRIGGER_FILE="$HOME/Downloads/.launch_minecraft"
 MCPI_DIR="$HOME/mcpi-reborn"
