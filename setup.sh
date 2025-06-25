@@ -101,11 +101,16 @@ echo "⏳ Allocating ${IMG_MB}MB with dd..."
 dd if=/dev/zero of="$IMG_PATH" bs=1M count="$IMG_MB" status=progress
 
 echo "💿 Formatting image with HFS filesystem..."
-yes | hformat -l "MacintoshHD" "$IMG_PATH"
+if yes | hformat -l "MacintoshHD" "$IMG_PATH"; then
+  echo "✅ hformat completed successfully."
+else
+  echo "❌ hformat failed. Check if the image is large enough and not locked."
+  exit 1
+fi
 
 chmod 644 "$IMG_PATH"
 chown "$TARGET_USER:$TARGET_USER" "$IMG_PATH"
-
+echo "🛠️ Image permissions set."
 
 echo "📑 Checking Basilisk II prefs file..."
 PREFS_PATH="$USER_HOME/.basilisk_ii_prefs"
