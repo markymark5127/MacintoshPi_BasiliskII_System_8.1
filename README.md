@@ -1,6 +1,6 @@
 # 🍎 Vintage Mac OS 8.1 Kiosk on Raspberry Pi 5
 
-This project transforms a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Lite into a **fullscreen, kiosk-style vintage Macintosh** running **Mac OS 8.1** via Basilisk II. It supports sound, auto-boot, hotkeys for shutdown/reboot, and includes a curated library of classic Mac software.
+This project transforms a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Desktop into a **fullscreen, kiosk-style vintage Macintosh** running **Mac OS 8.1** via Basilisk II. It supports sound, auto-boot, hotkeys for shutdown/reboot, and includes a curated library of classic Mac software.
 
 ---
 
