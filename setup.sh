@@ -89,7 +89,7 @@ echo "💽 Creating and formatting macos8.img using dd and hformat..."
 TOTAL_MB=$(df --output=avail / | tail -1)
 TOTAL_MB=$((TOTAL_MB / 1024))
 RESERVED_MB=800
-MAX_MB=30720
+MAX_MB=1024 #temporary size
 IMG_MB=$((TOTAL_MB - RESERVED_MB))
 if [ "$IMG_MB" -gt "$MAX_MB" ]; then
   IMG_MB=$MAX_MB
