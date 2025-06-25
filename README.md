@@ -17,7 +17,7 @@ This project transforms a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Li
 - ⌨️ Hotkeys for reboot (`Ctrl+Alt+R`) and shutdown (`Ctrl+Alt+S`) with retro-style overlay screens
 - ✅ Post-install prompt finalizes setup and removes install media
 - 📁 Mounts Pi’s `~/Downloads/` into Mac as “Unix” drive
-- 🧱 Optional Minecraft Pi Edition integration (desktop launcher inside Mac)
+- 🧱 Optional Minecraft Pi Edition Reborn integration (desktop launcher inside Mac)
 
 ---
 
@@ -36,7 +36,7 @@ This project transforms a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Li
 | `shutdown_overlay.sh`     | Script: show shutdown image and power off                 |
 | `reboot_overlay.sh`       | Script: show reboot image and restart                     |
 | `InstallFiles/`           | Apps auto-copied to `macos8.img/Applications`             |
-| `InstallFiles/Minecraft/` | If `--with-minecraft` flag: `.launch_minecraft` → Applications, `Minecraft` app → Desktop |
+| `InstallFiles/Minecraft/` | If `--with-minecraft` flag: `.launch_minecraft` → Applications, `Minecraft` app → Desktop (Pi Edition Reborn) |
 
 ---
 
@@ -62,7 +62,7 @@ This project transforms a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Li
    chmod +x setup.sh
    ```
 
-3. Run the setup script (optionally add Minecraft support):
+3. Run the setup script (optionally add Minecraft Pi Edition Reborn support):
    ```bash
    sudo ./setup.sh --with-minecraft
    ```
