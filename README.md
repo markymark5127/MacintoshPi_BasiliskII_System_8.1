@@ -28,7 +28,7 @@ Execute the commands below on a Raspberry Pi running Raspberry Pi OS 64‑bit. T
 ```bash
 git clone https://github.com/markymark5127/MacintoshPi_BasiliskII_System_8.1.git \
   && cd MacintoshPi_BasiliskII_System_8.1 \
-  && sudo ./setup.sh --with-minecraft
+  && sudo ./setup.sh   # add --with-minecraft if you want Pi Edition Reborn
 ```
 The installer handles all dependencies and will automatically copy the `Minecraft` launcher into the emulated Mac if you use the `--with-minecraft` flag.
 
@@ -76,7 +76,7 @@ The installer handles all dependencies and will automatically copy the `Minecraf
 
 3. Run the setup script (optionally add Minecraft Pi Edition Reborn support):
    ```bash
-   sudo ./setup.sh --with-minecraft
+   sudo ./setup.sh       # pass --with-minecraft to include the game
    ```
    The script automatically installs files into the account that invoked `sudo`,
    so running it with `sudo` is sufficient.

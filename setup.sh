@@ -3,7 +3,7 @@ set -euo pipefail
 
 MINECRAFT_MODE=false
 
-if [[ "$1" == "--with-minecraft" ]]; then
+if [[ $# -gt 0 && "$1" == "--with-minecraft" ]]; then
   MINECRAFT_MODE=true
   echo "🧱 Minecraft mode enabled — additional steps will be included."
 fi
