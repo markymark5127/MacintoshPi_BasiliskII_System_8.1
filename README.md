@@ -66,6 +66,8 @@ This project transforms a Raspberry Pi 5 (8GB) running Raspberry Pi OS 64-bit Li
    ```bash
    sudo ./setup.sh --with-minecraft
    ```
+   The script automatically installs files into the account that invoked `sudo`,
+   so running it with `sudo` is sufficient.
 
 4. After reboot, Mac OS 8.1 will launch in fullscreen automatically.
 
