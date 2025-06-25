@@ -54,7 +54,11 @@ if [ ! -f LC575.ROM ]; then
   echo "❌ Missing LC575.ROM. Please place it in the script directory."
   exit 1
 fi
-cp LC575.ROM "$USER_HOME/macos8/"
+
+cp LC575.ROM "$USER_HOME/macos8/LC575.ROM"
+chmod 644 "$USER_HOME/macos8/LC575.ROM"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8/LC575.ROM"
+
 cp DiskTools_MacOS8.image "$USER_HOME/macos8/"
 cp Images/shutdown.png "$USER_HOME/macos8/shutdown.png"
 cp Images/reboot.png "$USER_HOME/macos8/reboot.png"
@@ -73,19 +77,20 @@ echo "💽 Creating dynamic macos8.img..."
 TOTAL_MB=$(df --output=avail / | tail -1)
 TOTAL_MB=$((TOTAL_MB / 1024))
 RESERVED_MB=800
-MAX_MB=30720  # 30 GB limit
+MAX_MB=30720
 IMG_MB=$((TOTAL_MB - RESERVED_MB))
 if [ "$IMG_MB" -gt "$MAX_MB" ]; then
   IMG_MB=$MAX_MB
 fi
 
 echo "🧾 Requested disk image size: ${IMG_MB} MB"
-echo "📂 Creating sparse disk image (instantly allocated, grows as needed)..."
 truncate -s "${IMG_MB}M" "$USER_HOME/macos8/macos8.img"
 ls -lh "$USER_HOME/macos8/macos8.img"
 
-echo "📑 Copying Basilisk II install prefs..."
+echo "📑 Setting up Basilisk II prefs..."
 cp -f BasiliskII.install.prefs "$USER_HOME/.basilisk_ii_prefs"
+sed -i '/^rom /d' "$USER_HOME/.basilisk_ii_prefs"
+echo "rom $USER_HOME/macos8/LC575.ROM" >> "$USER_HOME/.basilisk_ii_prefs"
 
 echo "🎛️ Creating overlay scripts..."
 cp shutdown_overlay.sh "$USER_HOME/shutdown_overlay.sh"
@@ -106,16 +111,12 @@ mkdir -p "$AUTOSTART_DIR"
 
 if $MINECRAFT_MODE; then
   if [ ! -f launch_wrapper.sh ]; then
-    echo "❌ Error: launch_wrapper.sh not found in current directory!"
+    echo "❌ Error: launch_wrapper.sh not found!"
     exit 1
   fi
   cp launch_wrapper.sh "$USER_HOME/launch_wrapper.sh"
   chmod +x "$USER_HOME/launch_wrapper.sh"
   echo "@$USER_HOME/launch_wrapper.sh" >> "$AUTOSTART_DIR/autostart"
-
-  if [ -f "$USER_HOME/Downloads/.launch_minecraft" ]; then
-    sudo chattr +i "$USER_HOME/Downloads/.launch_minecraft"
-  fi
 else
   echo "@BasiliskII" >> "$AUTOSTART_DIR/autostart"
 fi
@@ -130,10 +131,9 @@ cat <<EOF >> "$AUTOSTART_DIR/autostart"
 #@pcmanfm
 EOF
 
-# Fix file ownership
-sudo chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8" "$USER_HOME"/.basilisk_ii_prefs "$USER_HOME"/.xbindkeysrc "$USER_HOME"/shutdown_overlay.sh "$USER_HOME"/reboot_overlay.sh
+chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8" "$USER_HOME/.basilisk_ii_prefs" "$USER_HOME/.xbindkeysrc" "$USER_HOME"/shutdown_overlay.sh "$USER_HOME"/reboot_overlay.sh
 if $MINECRAFT_MODE; then
-  sudo chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/launch_wrapper.sh"
+  chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/launch_wrapper.sh"
 fi
 
 echo "👤 Enabling autologin to desktop..."
@@ -154,8 +154,9 @@ fi
 
 if [ -d InstallFiles ]; then
   echo "🚀 Launching Basilisk II to begin installation..."
-  sudo -u "$TARGET_USER" BasiliskII &
-  read -p "🖥️ Press ENTER after completing Mac OS 8.1 installation to finalize setup..." temp
+  sudo -u "$TARGET_USER" BasiliskII
+  echo "✅ Basilisk II closed. Continuing setup..."
+
   echo "📂 Copying InstallFiles into macos8.img → Applications folder..."
   MNT=$(mktemp -d)
   if ! sudo mount -o loop,uid="$TARGET_USER",gid="$TARGET_USER" -t hfsplus "$USER_HOME/macos8/macos8.img" "$MNT" 2>/dev/null; then
@@ -181,6 +182,7 @@ else
 fi
 
 cp -f BasiliskII.final.prefs "$USER_HOME/.basilisk_ii_prefs"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.basilisk_ii_prefs"
 
 echo "✅ Setup complete. Rebooting..."
 sleep 5
