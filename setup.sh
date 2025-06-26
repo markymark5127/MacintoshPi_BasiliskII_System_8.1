@@ -322,22 +322,15 @@ if ! sudo grep -q "^$TARGET_USER.*NOPASSWD: /sbin/shutdown" /etc/sudoers; then
   echo "$TARGET_USER ALL=(ALL) NOPASSWD: /sbin/shutdown, /sbin/reboot" | sudo tee -a /etc/sudoers
 fi
 
-echo "⚙️ Configuring autologin to $TARGET_USER..."
+
+sudo rm -f /etc/systemd/system/getty@tty1.service.d/autologin.conf
 sudo mkdir -p /etc/systemd/system/getty@tty1.service.d
 
-# Clear any previous ExecStart lines and set autologin to TARGET_USER
 sudo bash -c "cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf" <<EOF
 [Service]
 ExecStart=
 ExecStart=-/sbin/agetty --autologin $TARGET_USER --noclear %I \$TERM
 EOF
-
-sudo systemctl daemon-reexec
-
-echo "🔐 Setting passwordless sudo for shutdown/reboot..."
-if ! sudo grep -q "^$TARGET_USER.*NOPASSWD: /sbin/shutdown" /etc/sudoers; then
-  echo "$TARGET_USER ALL=(ALL) NOPASSWD: /sbin/shutdown, /sbin/reboot" | sudo tee -a /etc/sudoers
-fi
 
 echo "🚀 Launching Basilisk II to begin installation..."
 sudo -u "$TARGET_USER" BasiliskII
