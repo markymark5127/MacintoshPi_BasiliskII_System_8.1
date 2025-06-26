@@ -183,6 +183,8 @@ echo "🧩 Installing kiosk files..."
 cat <<'EOF' > "$USER_HOME/.xinitrc"
 #!/bin/bash
 
+export DISPLAY=:0
+
 # Disable screen blanking and power saving
 xset s off
 xset -dpms
@@ -406,6 +408,9 @@ if [ -d InstallFiles ]; then
 else
   echo "⚠️ No InstallFiles directory found. Skipping copy step."
 fi
+
+echo "🔁 Re-applying autologin boot behavior..."
+sudo raspi-config nonint do_boot_behaviour B2
 
 echo "✅ Setup complete. Rebooting..."
 sleep 5
