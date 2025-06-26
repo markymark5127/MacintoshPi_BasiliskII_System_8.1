@@ -13,15 +13,14 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# Always operate as root
-TARGET_USER="root"
-USER_HOME="/root"
+TARGET_USER="${SUDO_USER:-$USER}"
+USER_HOME=$(eval echo "~$TARGET_USER")
 PREFS_PATH="$USER_HOME/.basilisk_ii_prefs"
 
 set_ownership_and_perms() {
   local path="$1"
   local mode="$2"
-  chown root:root "$path"
+  chown "$TARGET_USER:$TARGET_USER" "$path"
   chmod "$mode" "$path"
 }
 
@@ -225,8 +224,8 @@ cat <<'EOF' > "$USER_HOME/shutdown_overlay.sh"
 #!/bin/bash
 set -e
 
-TARGET_USER="root"
-USER_HOME="/root"
+TARGET_USER="${SUDO_USER:-$USER}"
+USER_HOME=$(eval echo "~$TARGET_USER")
 IMAGE_PATH="$USER_HOME/macos8/shutdown.png"
 
 # Verify splash image exists
@@ -242,7 +241,7 @@ sleep 3
 
 # Write shutdown trigger for .xinitrc to process
 touch "$USER_HOME/.shutdown"
-chown root:root "$USER_HOME/.shutdown"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.shutdown"
 
 # Kill BasiliskII (so .xinitrc can take over)
 pkill -f BasiliskII || true
@@ -256,8 +255,8 @@ cat <<'EOF' > "$USER_HOME/reboot_overlay.sh"
 #!/bin/bash
 set -e
 
-TARGET_USER="root"
-USER_HOME="/root"
+TARGET_USER="${SUDO_USER:-$USER}"
+USER_HOME=$(eval echo "~$TARGET_USER")
 IMAGE_PATH="$USER_HOME/macos8/reboot.png"
 
 # Verify splash image exists
@@ -273,7 +272,7 @@ sleep 3
 
 # Write reboot trigger for .xinitrc to process
 touch "$USER_HOME/.reboot"
-chown root:root "$USER_HOME/.reboot"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.reboot"
 
 # Kill BasiliskII (so .xinitrc can take over)
 pkill -f BasiliskII || true
@@ -283,17 +282,17 @@ sudo reboot
 EOF
 
 # Set ownership and permissions
-chown root:root "$USER_HOME/.xinitrc" "$USER_HOME/.xbindkeysrc"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.xinitrc" "$USER_HOME/.xbindkeysrc"
 chmod 644 "$USER_HOME/.xinitrc" "$USER_HOME/.xbindkeysrc"
 
 chmod +x "$USER_HOME/shutdown_overlay.sh" "$USER_HOME/reboot_overlay.sh"
-chown root:root "$USER_HOME/shutdown_overlay.sh" "$USER_HOME/reboot_overlay.sh"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/shutdown_overlay.sh" "$USER_HOME/reboot_overlay.sh"
 
 
 PROFILE_FILE="$USER_HOME/.bash_profile"
 if ! grep -q 'exec startx' "$PROFILE_FILE" 2>/dev/null; then
   echo '[[ -z $DISPLAY && $XDG_VTNR -eq 1 ]] && exec startx' >> "$PROFILE_FILE"
-  chown root:root "$PROFILE_FILE"
+  chown "$TARGET_USER:$TARGET_USER" "$PROFILE_FILE"
 fi
 
 touch "$USER_HOME/.hushlogin"
@@ -334,7 +333,7 @@ ExecStart=-/sbin/agetty --autologin $TARGET_USER --noclear %I \$TERM
 EOF
 
 echo "🚀 Launching Basilisk II to begin installation..."
-BasiliskII
+sudo -u "$TARGET_USER" BasiliskII
 echo "📴 Basilisk II has closed."
 read -p "🕹️ Press Enter to continue setup..."
 
@@ -400,7 +399,7 @@ echo "📂 Copying InstallFiles into Downloads folder..."
 if [ -d InstallFiles ]; then
   mkdir -p "$USER_HOME/Downloads/InstallFiles"
   cp -r InstallFiles/* "$USER_HOME/Downloads/InstallFiles/"
-  chown -R root:root "$USER_HOME/Downloads/InstallFiles"
+  chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/Downloads/InstallFiles"
   echo "✅ Files copied to $USER_HOME/Downloads/InstallFiles."
 else
   echo "⚠️ No InstallFiles directory found. Skipping copy step."
