@@ -298,7 +298,16 @@ fi
 touch "$USER_HOME/.hushlogin"
 set_ownership_and_perms "$USER_HOME/.hushlogin" 644
 
+echo "⚙️ Configuring autologin to $TARGET_USER..."
 sudo raspi-config nonint do_boot_behaviour B2
+sudo mkdir -p /etc/systemd/system/getty@tty1.service.d
+
+sudo bash -c "cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf" <<EOF
+[Service]
+ExecStart=-/sbin/agetty --autologin $TARGET_USER --noclear %I \$TERM
+EOF
+
+sudo systemctl daemon-reexec
 
 echo "🔧 Configuring splash screen..."
 sudo sed -i '/^disable_splash/d' /boot/config.txt
@@ -309,8 +318,25 @@ if [ -f Images/apple_splash.png ]; then
 fi
 
 echo "🔐 Setting passwordless sudo for shutdown/reboot..."
-if ! sudo grep -q '/sbin/shutdown' /etc/sudoers; then
-  echo 'pi ALL=(ALL) NOPASSWD: /sbin/shutdown, /sbin/reboot' | sudo tee -a /etc/sudoers
+if ! sudo grep -q "^$TARGET_USER.*NOPASSWD: /sbin/shutdown" /etc/sudoers; then
+  echo "$TARGET_USER ALL=(ALL) NOPASSWD: /sbin/shutdown, /sbin/reboot" | sudo tee -a /etc/sudoers
+fi
+
+echo "⚙️ Configuring autologin to $TARGET_USER..."
+sudo mkdir -p /etc/systemd/system/getty@tty1.service.d
+
+# Clear any previous ExecStart lines and set autologin to TARGET_USER
+sudo bash -c "cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf" <<EOF
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin $TARGET_USER --noclear %I \$TERM
+EOF
+
+sudo systemctl daemon-reexec
+
+echo "🔐 Setting passwordless sudo for shutdown/reboot..."
+if ! sudo grep -q "^$TARGET_USER.*NOPASSWD: /sbin/shutdown" /etc/sudoers; then
+  echo "$TARGET_USER ALL=(ALL) NOPASSWD: /sbin/shutdown, /sbin/reboot" | sudo tee -a /etc/sudoers
 fi
 
 echo "🚀 Launching Basilisk II to begin installation..."
