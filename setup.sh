@@ -115,8 +115,19 @@ else
   exit 1
 fi
 
-echo "📝 Creating install Basilisk II prefs file..."
-if [ ! -f "$PREFS_PATH" ]; then
+echo "📝 Writing Basilisk II Install prefs file..."
+if [ -f "$PREFS_PATH" ]; then
+  i=1
+  while [ -f "$PREFS_PATH.bak.$i" ]; do
+    i=$((i + 1))
+  done
+  cp "$PREFS_PATH" "$PREFS_PATH.bak.$i"
+  echo "🔐 Backup created: $PREFS_PATH.bak.$i"
+fi
+
+# Truncate the file if it exists, or create it if it doesn't
+: > "$PREFS_PATH"
+
 cat <<EOF > "$PREFS_PATH"
 rom $USER_HOME/macos8/LC575.ROM
 disk $USER_HOME/macos8/DiskTools_MacOS8.image
@@ -164,16 +175,19 @@ name_encoding 0
 delay 0
 init_grab false
 EOF
-  chown "$TARGET_USER:$TARGET_USER" "$PREFS_PATH"
-  chmod 644 "$PREFS_PATH"
-else
-  echo "🧠 Prefs file already exists. Leaving it untouched."
-fi
+
+chown "$TARGET_USER:$TARGET_USER" "$PREFS_PATH"
+chmod 644 "$PREFS_PATH"
+
 
 echo "🎛️ Creating overlay scripts..."
+echo "⚡ Installing shutdown/reboot overlay scripts..."
 cp shutdown_overlay.sh "$USER_HOME/shutdown_overlay.sh"
 cp reboot_overlay.sh "$USER_HOME/reboot_overlay.sh"
-chmod +x "$USER_HOME/shutdown_overlay.sh" "$USER_HOME/reboot_overlay.sh"
+chmod +x "$USER_HOME/shutdown_overlay.sh"
+chmod +x "$USER_HOME/reboot_overlay.sh"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/shutdown_overlay.sh" "$USER_HOME/reboot_overlay.sh"
+
 
 cat <<EOF > "$USER_HOME/.xbindkeysrc"
 $USER_HOME/shutdown_overlay.sh
@@ -183,13 +197,13 @@ $USER_HOME/reboot_overlay.sh
   Control+Alt + r
 EOF
 
-echo "🖥️ Configuring kiosk autologin..."
+echo "📄 Installing kiosk startup scripts..."
 cp .xinitrc "$USER_HOME/.xinitrc"
 cp launch_wrapper.sh "$USER_HOME/launch_wrapper.sh"
-chmod +x "$USER_HOME/.xinitrc" "$USER_HOME/launch_wrapper.sh"
+chmod +x "$USER_HOME/.xinitrc"
+chmod +x "$USER_HOME/launch_wrapper.sh"
 chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.xinitrc" "$USER_HOME/launch_wrapper.sh"
-chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8" "$USER_HOME/.xbindkeysrc" \
-  "$USER_HOME"/shutdown_overlay.sh "$USER_HOME"/reboot_overlay.sh
+
 
 PROFILE_FILE="$USER_HOME/.bash_profile"
 if ! grep -q 'exec startx' "$PROFILE_FILE" 2>/dev/null; then
@@ -202,7 +216,7 @@ chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.hushlogin"
 
 sudo raspi-config nonint do_boot_behaviour B2
 
-echo "🔧 Configuring splash screen (optional)..."
+echo "🔧 Configuring splash screen..."
 sudo sed -i '/^disable_splash/d' /boot/config.txt
 echo "disable_splash=1" | sudo tee -a /boot/config.txt
 if [ -f Images/apple_splash.png ]; then
@@ -215,83 +229,81 @@ if ! sudo grep -q '/sbin/shutdown' /etc/sudoers; then
   echo 'pi ALL=(ALL) NOPASSWD: /sbin/shutdown, /sbin/reboot' | sudo tee -a /etc/sudoers
 fi
 
-if [ -d InstallFiles ]; then
-  echo "🚀 Launching Basilisk II to begin installation..."
-  sudo -u "$TARGET_USER" BasiliskII
-  echo "📴 Basilisk II has closed."
-  read -p "🕹️ Press Enter to continue setup..."
-  
-  echo "📝 Creating Basilisk II prefs file..."
-  cat <<EOF > "$PREFS_PATH"
-  rom $USER_HOME/macos8/LC575.ROM
-  disk $USER_HOME/macos8/macos8.img
-  extfs $USER_HOME/Downloads
-  screen win/800/600
-  seriala /dev/cu.BLTH
-  serialb /dev/null
-  ether slirp
-  udptunnel false
-  udpport 6066
-  bootdrive 0
-  bootdriver 0
-  ramsize 134217728
-  frameskip 2
-  modelid 14
-  cpu 4
-  fpu true
-  nocdrom false
-  nosound false
-  noclipconversion false
-  nogui true
-  jit false
-  jitfpu true
-  jitdebug false
-  jitcachesize 8192
-  jitlazyflush true
-  jitinline true
-  keyboardtype 5
-  keycodes false
-  mousewheelmode 0
-  mousewheellines 0
-  ignoresegv true
-  idlewait true
-  displaycolordepth 8
-  hotkey 0
-  scale_nearest false
-  scale_integer false
-  yearofs 0
-  dayofs 0
-  swap_opt_cmd false
-  sound_buffer 0
-  name_encoding 0
-  delay 0
-  init_grab false
-EOF
 
-  echo "📂 Copying InstallFiles into macos8.img → Applications folder..."
-  MNT=$(mktemp -d)
-  if ! sudo mount -o loop,uid="$TARGET_USER",gid="$TARGET_USER" -t hfsplus "$USER_HOME/macos8/macos8.img" "$MNT" 2>/dev/null; then
-    echo "⚠️ hfsplus mount failed, attempting fallback to hfs..."
-    if ! sudo mount -o loop,uid="$TARGET_USER",gid="$TARGET_USER" -t hfs "$USER_HOME/macos8/macos8.img" "$MNT"; then
-      echo "❌ Failed to mount macos8.img. Make sure hfs/hfsplus support is installed."
-      exit 1
-    fi
-  fi
-  mkdir -p "$MNT/Applications"
-  for item in InstallFiles/*; do
-    name=$(basename "$item")
-    [[ "$name" != "Minecraft" ]] && sudo cp -r "$item" "$MNT/Applications/"
+echo "🚀 Launching Basilisk II to begin installation..."
+sudo -u "$TARGET_USER" BasiliskII
+echo "📴 Basilisk II has closed."
+read -p "🕹️ Press Enter to continue setup..."
+
+echo "📝 Writing Basilisk II Final prefs file..."
+if [ -f "$PREFS_PATH" ]; then
+  i=1
+  while [ -f "$PREFS_PATH.bak.$i" ]; do
+    i=$((i + 1))
   done
-  if $MINECRAFT_MODE; then
-    [[ -f InstallFiles/Minecraft/.launch_minecraft ]] && sudo cp InstallFiles/Minecraft/.launch_minecraft "$MNT/Applications/"
-    [[ -d InstallFiles/Minecraft/Minecraft ]] && sudo cp -r InstallFiles/Minecraft/Minecraft "$MNT/Desktop/"
-  fi
-  sudo umount "$MNT"
-  rmdir "$MNT"
-else
-  echo "⚠️ No InstallFiles directory found. Skipping app injection step."
+  cp "$PREFS_PATH" "$PREFS_PATH.bak.$i"
+  echo "🔐 Backup created: $PREFS_PATH.bak.$i"
 fi
 
+# Truncate the file if it exists, or create it if it doesn't
+: > "$PREFS_PATH"
+cat <<EOF > "$PREFS_PATH"
+rom $USER_HOME/macos8/LC575.ROM
+disk $USER_HOME/macos8/macos8.img
+extfs $USER_HOME/Downloads
+screen dga/800/600
+seriala /dev/cu.BLTH
+serialb /dev/null
+ether slirp
+udptunnel false
+udpport 6066
+bootdrive 0
+bootdriver 0
+ramsize 134217728
+frameskip 2
+modelid 14
+cpu 4
+fpu true
+nocdrom false
+nosound false
+noclipconversion false
+nogui true
+jit false
+jitfpu true
+jitdebug false
+jitcachesize 8192
+jitlazyflush true
+jitinline true
+keyboardtype 5
+keycodes false
+mousewheelmode 0
+mousewheellines 0
+ignoresegv true
+idlewait true
+displaycolordepth 8
+hotkey 0
+scale_nearest false
+scale_integer false
+yearofs 0
+dayofs 0
+swap_opt_cmd false
+sound_buffer 0
+name_encoding 0
+delay 0
+init_grab false
+EOF
+chown "$TARGET_USER:$TARGET_USER" "$PREFS_PATH"
+chmod 644 "$PREFS_PATH"
+
+echo "📂 Copying InstallFiles into Downloads folder..."
+if [ -d InstallFiles ]; then
+  mkdir -p "$USER_HOME/Downloads/InstallFiles"
+  cp -r InstallFiles/* "$USER_HOME/Downloads/InstallFiles/"
+  chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/Downloads/InstallFiles"
+  echo "✅ Files copied to $USER_HOME/Downloads/InstallFiles."
+else
+  echo "⚠️ No InstallFiles directory found. Skipping copy step."
+fi
 echo "✅ Setup complete. Rebooting..."
 sleep 5
 sudo reboot

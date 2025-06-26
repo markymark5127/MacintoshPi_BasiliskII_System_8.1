@@ -4,5 +4,4 @@ xset -dpms
 xset s noblank
 unclutter -idle 0 &
 xbindkeys &
-$HOME/launch_wrapper.sh
-
+exec "$HOME/launch_wrapper.sh"

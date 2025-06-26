@@ -1,0 +1,6 @@
+$HOME/shutdown_overlay.sh
+  Control+Alt + s
+
+$HOME/reboot_overlay.sh
+  Control+Alt + r
+

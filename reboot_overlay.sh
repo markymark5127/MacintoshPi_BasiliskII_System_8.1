@@ -1,9 +1,14 @@
 #!/bin/bash
-set -euo pipefail
-feh --fullscreen "$HOME/macos8/reboot.png" &
-FEH_PID=$!
-trap "kill $FEH_PID 2>/dev/null || true" EXIT
-sleep 3
-kill "$FEH_PID"
-sudo reboot
 
+TARGET_USER="${SUDO_USER:-$USER}"
+USER_HOME=$(eval echo "~$TARGET_USER")
+
+IMAGE_PATH="$USER_HOME/macos8/reboot.png"
+
+# Show splash
+feh --fullscreen --auto-zoom --hide-pointer "$IMAGE_PATH" &
+
+sleep 3
+
+# Trigger reboot
+sudo reboot
