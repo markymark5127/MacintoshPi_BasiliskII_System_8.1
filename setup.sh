@@ -134,7 +134,7 @@ disk $USER_HOME/macos8/DiskTools_MacOS8.image
 disk $USER_HOME/macos8/MacOS8_1.iso
 disk $USER_HOME/macos8/macos8.img
 extfs $USER_HOME/Downloads
-screen win/800/600
+screen dga/800/600
 seriala /dev/cu.BLTH
 serialb /dev/null
 ether slirp
