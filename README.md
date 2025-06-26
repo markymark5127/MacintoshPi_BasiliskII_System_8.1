@@ -81,7 +81,8 @@ The installer handles all dependencies and will automatically copy the `Minecraf
    The script automatically installs files into the account that invoked `sudo`,
    so running it with `sudo` is sufficient.
 
-4. After reboot, Mac OS 8.1 will launch in fullscreen automatically.
+4. The installer configures console autologin and `startx` so the emulator boots
+   straight into fullscreen mode on each restart.
 
 5. Inside the emulator, initialize the new disk and complete the OS installation.
 

@@ -15,6 +15,7 @@ fi
 
 TARGET_USER="${SUDO_USER:-$USER}"
 USER_HOME=$(eval echo "~$TARGET_USER")
+PREFS_PATH="$USER_HOME/.basilisk_ii_prefs"
 
 echo "🔧 Installing dependencies..."
 sudo apt update
@@ -115,6 +116,7 @@ else
 fi
 
 echo "📝 Creating install Basilisk II prefs file..."
+if [ ! -f "$PREFS_PATH" ]; then
 cat <<EOF > "$PREFS_PATH"
 rom $USER_HOME/macos8/LC575.ROM
 disk $USER_HOME/macos8/DiskTools_MacOS8.image
@@ -181,30 +183,24 @@ $USER_HOME/reboot_overlay.sh
   Control+Alt + r
 EOF
 
-echo "🖥️ Setting up GUI autostart..."
-AUTOSTART_DIR="$USER_HOME/.config/lxsession/LXDE-pi"
-mkdir -p "$AUTOSTART_DIR"
-
-if $MINECRAFT_MODE; then
-  if [ ! -f launch_wrapper.sh ]; then
-    echo "❌ Error: launch_wrapper.sh not found!"
-    exit 1
-  fi
-  cp launch_wrapper.sh "$USER_HOME/launch_wrapper.sh"
-  chmod +x "$USER_HOME/launch_wrapper.sh"
-  echo "@$USER_HOME/launch_wrapper.sh" >> "$AUTOSTART_DIR/autostart"
-else
-  echo "@BasiliskII" >> "$AUTOSTART_DIR/autostart"
-fi
-
+echo "🖥️ Configuring kiosk autologin..."
+cp .xinitrc "$USER_HOME/.xinitrc"
+cp launch_wrapper.sh "$USER_HOME/launch_wrapper.sh"
+chmod +x "$USER_HOME/.xinitrc" "$USER_HOME/launch_wrapper.sh"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.xinitrc" "$USER_HOME/launch_wrapper.sh"
 chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8" "$USER_HOME/.xbindkeysrc" \
   "$USER_HOME"/shutdown_overlay.sh "$USER_HOME"/reboot_overlay.sh
-if $MINECRAFT_MODE; then
-  chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/launch_wrapper.sh"
+
+PROFILE_FILE="$USER_HOME/.bash_profile"
+if ! grep -q 'exec startx' "$PROFILE_FILE" 2>/dev/null; then
+  echo '[[ -z $DISPLAY && $XDG_VTNR -eq 1 ]] && exec startx' >> "$PROFILE_FILE"
+  chown "$TARGET_USER:$TARGET_USER" "$PROFILE_FILE"
 fi
 
-echo "👤 Enabling autologin to desktop..."
-sudo raspi-config nonint do_boot_behaviour B4
+touch "$USER_HOME/.hushlogin"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.hushlogin"
+
+sudo raspi-config nonint do_boot_behaviour B2
 
 echo "🔧 Configuring splash screen (optional)..."
 sudo sed -i '/^disable_splash/d' /boot/config.txt
@@ -270,7 +266,7 @@ if [ -d InstallFiles ]; then
   name_encoding 0
   delay 0
   init_grab false
-  EOF
+EOF
 
   echo "📂 Copying InstallFiles into macos8.img → Applications folder..."
   MNT=$(mktemp -d)
