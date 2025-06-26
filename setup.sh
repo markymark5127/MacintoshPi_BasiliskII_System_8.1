@@ -17,6 +17,13 @@ TARGET_USER="${SUDO_USER:-$USER}"
 USER_HOME=$(eval echo "~$TARGET_USER")
 PREFS_PATH="$USER_HOME/.basilisk_ii_prefs"
 
+set_ownership_and_perms() {
+  local path="$1"
+  local mode="$2"
+  chown "$TARGET_USER:$TARGET_USER" "$path"
+  chmod "$mode" "$path"
+}
+
 echo "🔧 Installing dependencies..."
 sudo apt update
 sudo apt install -y build-essential libsdl2-dev libsdl2-image-dev git hfsutils hfsprogs \
@@ -58,20 +65,16 @@ if [ ! -f LC575.ROM ]; then
 fi
 
 cp LC575.ROM "$USER_HOME/macos8/LC575.ROM"
-chmod 644 "$USER_HOME/macos8/LC575.ROM"
-chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8/LC575.ROM"
+set_ownership_and_perms "$USER_HOME/macos8/LC575.ROM" 644
 
 cp DiskTools_MacOS8.image "$USER_HOME/macos8/DiskTools_MacOS8.image"
-chmod 644 "$USER_HOME/macos8/DiskTools_MacOS8.image"
-chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8/DiskTools_MacOS8.image"
+set_ownership_and_perms "$USER_HOME/macos8/DiskTools_MacOS8.image" 644
 
 cp Images/shutdown.png "$USER_HOME/macos8/shutdown.png"
-chmod 644 "$USER_HOME/macos8/shutdown.png"
-chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8/shutdown.png"
+set_ownership_and_perms "$USER_HOME/macos8/shutdown.png" 644
 
 cp Images/reboot.png "$USER_HOME/macos8/reboot.png"
-chmod 644 "$USER_HOME/macos8/reboot.png"
-chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8/reboot.png"
+set_ownership_and_perms "$USER_HOME/macos8/reboot.png" 644
 
 echo "📦 Ensuring Mac OS 8.1 ISO is present and verified..."
 ISO_PATH="$USER_HOME/macos8/MacOS8_1.iso"
@@ -82,11 +85,9 @@ if [ ! -f "$ISO_PATH" ] || ! md5sum -c "$USER_HOME/macos8/MacOS8_1.iso.md5"; the
   echo "🔍 Verifying checksum..."
   md5sum -c "$USER_HOME/macos8/MacOS8_1.iso.md5" || { echo "❌ ISO checksum failed. Aborting."; exit 1; }
 fi
-chmod 644 "$ISO_PATH"
-chown "$TARGET_USER:$TARGET_USER" "$ISO_PATH"
+set_ownership_and_perms "$ISO_PATH" 644
 
 echo "💽 Reconstructing macos8.img from parts..."
-
 IMG_PARTS_DIR="Drive"
 IMG_PATH="$USER_HOME/macos8/macos8.img"
 MD5_EXPECTED="a2a8c2749940d42b7f0d11dc2aaabd2f"
@@ -107,8 +108,7 @@ if ls "$IMG_PARTS_DIR"/macos8.img.part_* 1> /dev/null 2>&1; then
     exit 1
   fi
 
-  chmod 644 "$IMG_PATH"
-  chown "$TARGET_USER:$TARGET_USER" "$IMG_PATH"
+  set_ownership_and_perms "$IMG_PATH" 644
   echo "✅ macos8.img successfully assembled and verified."
 else
   echo "❌ Image parts not found in $IMG_PARTS_DIR. Aborting."
@@ -125,7 +125,6 @@ if [ -f "$PREFS_PATH" ]; then
   echo "🔐 Backup created: $PREFS_PATH.bak.$i"
 fi
 
-# Truncate the file if it exists, or create it if it doesn't
 : > "$PREFS_PATH"
 
 cat <<EOF > "$PREFS_PATH"
@@ -176,18 +175,13 @@ delay 0
 init_grab false
 EOF
 
-chown "$TARGET_USER:$TARGET_USER" "$PREFS_PATH"
-chmod 644 "$PREFS_PATH"
-
+set_ownership_and_perms "$PREFS_PATH" 644
 
 echo "🎛️ Creating overlay scripts..."
-echo "⚡ Installing shutdown/reboot overlay scripts..."
 cp shutdown_overlay.sh "$USER_HOME/shutdown_overlay.sh"
 cp reboot_overlay.sh "$USER_HOME/reboot_overlay.sh"
-chmod +x "$USER_HOME/shutdown_overlay.sh"
-chmod +x "$USER_HOME/reboot_overlay.sh"
+chmod +x "$USER_HOME/shutdown_overlay.sh" "$USER_HOME/reboot_overlay.sh"
 chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/shutdown_overlay.sh" "$USER_HOME/reboot_overlay.sh"
-
 
 cat <<EOF > "$USER_HOME/.xbindkeysrc"
 $USER_HOME/shutdown_overlay.sh
@@ -196,14 +190,13 @@ $USER_HOME/shutdown_overlay.sh
 $USER_HOME/reboot_overlay.sh
   Control+Alt + r
 EOF
+set_ownership_and_perms "$USER_HOME/.xbindkeysrc" 644
 
 echo "📄 Installing kiosk startup scripts..."
 cp .xinitrc "$USER_HOME/.xinitrc"
-cp launch_wrapper.sh "$USER_HOME/launch_wrapper.sh"
-chmod +x "$USER_HOME/.xinitrc"
-chmod +x "$USER_HOME/launch_wrapper.sh"
-chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.xinitrc" "$USER_HOME/launch_wrapper.sh"
-
+#cp launch_wrapper.sh "$USER_HOME/launch_wrapper.sh"
+chmod +x "$USER_HOME/.xinitrc" #"$USER_HOME/launch_wrapper.sh"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.xinitrc" #"$USER_HOME/launch_wrapper.sh"
 
 PROFILE_FILE="$USER_HOME/.bash_profile"
 if ! grep -q 'exec startx' "$PROFILE_FILE" 2>/dev/null; then
@@ -212,7 +205,7 @@ if ! grep -q 'exec startx' "$PROFILE_FILE" 2>/dev/null; then
 fi
 
 touch "$USER_HOME/.hushlogin"
-chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.hushlogin"
+set_ownership_and_perms "$USER_HOME/.hushlogin" 644
 
 sudo raspi-config nonint do_boot_behaviour B2
 
@@ -229,7 +222,6 @@ if ! sudo grep -q '/sbin/shutdown' /etc/sudoers; then
   echo 'pi ALL=(ALL) NOPASSWD: /sbin/shutdown, /sbin/reboot' | sudo tee -a /etc/sudoers
 fi
 
-
 echo "🚀 Launching Basilisk II to begin installation..."
 sudo -u "$TARGET_USER" BasiliskII
 echo "📴 Basilisk II has closed."
@@ -245,7 +237,6 @@ if [ -f "$PREFS_PATH" ]; then
   echo "🔐 Backup created: $PREFS_PATH.bak.$i"
 fi
 
-# Truncate the file if it exists, or create it if it doesn't
 : > "$PREFS_PATH"
 cat <<EOF > "$PREFS_PATH"
 rom $USER_HOME/macos8/LC575.ROM
@@ -292,8 +283,7 @@ name_encoding 0
 delay 0
 init_grab false
 EOF
-chown "$TARGET_USER:$TARGET_USER" "$PREFS_PATH"
-chmod 644 "$PREFS_PATH"
+set_ownership_and_perms "$PREFS_PATH" 644
 
 echo "📂 Copying InstallFiles into Downloads folder..."
 if [ -d InstallFiles ]; then
@@ -304,6 +294,7 @@ if [ -d InstallFiles ]; then
 else
   echo "⚠️ No InstallFiles directory found. Skipping copy step."
 fi
+
 echo "✅ Setup complete. Rebooting..."
 sleep 5
 sudo reboot
