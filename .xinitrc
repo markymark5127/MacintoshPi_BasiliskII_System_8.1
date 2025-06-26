@@ -1,19 +1,25 @@
 #!/bin/bash
 
-# Resolve correct home directory
-TARGET_USER="${SUDO_USER:-$USER}"
-USER_HOME=$(eval echo "~$TARGET_USER")
-
-# Disable screen blanking, power saving, and screen saver
+# Disable screen blanking and power saving
 xset s off
 xset -dpms
 xset s noblank
 
-# Hide mouse cursor when idle
+# Hide mouse cursor if available
 command -v unclutter >/dev/null && unclutter -idle 0 &
 
-# Enable hotkey handling
-command -v xbindkeys >/dev/null && xbindkeys &
+# Launch BasiliskII fullscreen
+BasiliskII
 
-# Run main app loop (e.g., BasiliskII → Minecraft)
-exec "$USER_HOME/launch_wrapper.sh"
+# After BasiliskII exits, check for reboot/shutdown triggers
+if [ -f "$HOME/.reboot" ]; then
+  echo "🔁 Reboot requested. Rebooting in 10 seconds..."
+  sleep 10
+  sudo reboot
+elif [ -f "$HOME/.shutdown" ]; then
+  echo "⏻ Shutdown requested. Shutting down in 10 seconds..."
+  sleep 10
+  sudo shutdown -h now
+else
+  echo "🛑 No trigger file found. Staying on terminal."
+fi

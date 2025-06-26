@@ -177,26 +177,117 @@ EOF
 
 set_ownership_and_perms "$PREFS_PATH" 644
 
-echo "🎛️ Creating overlay scripts..."
-cp shutdown_overlay.sh "$USER_HOME/shutdown_overlay.sh"
-cp reboot_overlay.sh "$USER_HOME/reboot_overlay.sh"
+echo "🧩 Installing kiosk files..."
+
+# Write new .xinitrc
+cat <<'EOF' > "$USER_HOME/.xinitrc"
+#!/bin/bash
+
+# Disable screen blanking and power saving
+xset s off
+xset -dpms
+xset s noblank
+
+# Hide mouse cursor if available
+command -v unclutter >/dev/null && unclutter -idle 0 &
+
+# Launch BasiliskII fullscreen
+BasiliskII
+
+# After BasiliskII exits, check for reboot/shutdown triggers
+if [ -f "$HOME/.reboot" ]; then
+  echo "🔁 Reboot requested. Rebooting in 10 seconds..."
+  sleep 10
+  sudo reboot
+elif [ -f "$HOME/.shutdown" ]; then
+  echo "⏻ Shutdown requested. Shutting down in 10 seconds..."
+  sleep 10
+  sudo shutdown -h now
+else
+  echo "🛑 No trigger file found. Staying on terminal."
+fi
+EOF
+
+# Write .xbindkeysrc
+cat <<'EOF' > "$USER_HOME/.xbindkeysrc"
+# Shutdown: Ctrl + Alt + S
+$HOME/shutdown_overlay.sh
+  Control+Alt + s
+
+# Reboot: Ctrl + Alt + R
+$HOME/reboot_overlay.sh
+  Control+Alt + r
+EOF
+
+# Write shutdown_overlay.sh
+cat <<'EOF' > "$USER_HOME/shutdown_overlay.sh"
+#!/bin/bash
+set -e
+
+TARGET_USER="${SUDO_USER:-$USER}"
+USER_HOME=$(eval echo "~$TARGET_USER")
+IMAGE_PATH="$USER_HOME/macos8/shutdown.png"
+
+# Verify splash image exists
+if [ ! -f "$IMAGE_PATH" ]; then
+  echo "❌ Shutdown image not found at $IMAGE_PATH"
+  exit 1
+fi
+
+# Show shutdown splash
+command -v feh >/dev/null && feh --fullscreen --auto-zoom --hide-pointer "$IMAGE_PATH" &
+
+sleep 3
+
+# Write shutdown trigger for .xinitrc to process
+touch "$USER_HOME/.shutdown"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.shutdown"
+
+# Kill BasiliskII (so .xinitrc can take over)
+pkill -f BasiliskII || true
+
+# Fallback: force shutdown
+sudo shutdown -h now
+EOF
+
+# Write reboot_overlay.sh
+cat <<'EOF' > "$USER_HOME/reboot_overlay.sh"
+#!/bin/bash
+set -e
+
+TARGET_USER="${SUDO_USER:-$USER}"
+USER_HOME=$(eval echo "~$TARGET_USER")
+IMAGE_PATH="$USER_HOME/macos8/reboot.png"
+
+# Verify splash image exists
+if [ ! -f "$IMAGE_PATH" ]; then
+  echo "❌ Reboot image not found at $IMAGE_PATH"
+  exit 1
+fi
+
+# Show reboot splash
+command -v feh >/dev/null && feh --fullscreen --auto-zoom --hide-pointer "$IMAGE_PATH" &
+
+sleep 3
+
+# Write reboot trigger for .xinitrc to process
+touch "$USER_HOME/.reboot"
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.reboot"
+
+# Kill BasiliskII (so .xinitrc can take over)
+pkill -f BasiliskII || true
+
+# Fallback: force reboot
+sudo reboot
+EOF
+
+# Set ownership and permissions
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.xinitrc" "$USER_HOME/.xbindkeysrc"
+chmod 644 "$USER_HOME/.xinitrc" "$USER_HOME/.xbindkeysrc"
+
 chmod +x "$USER_HOME/shutdown_overlay.sh" "$USER_HOME/reboot_overlay.sh"
 chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/shutdown_overlay.sh" "$USER_HOME/reboot_overlay.sh"
 
-cat <<EOF > "$USER_HOME/.xbindkeysrc"
-$USER_HOME/shutdown_overlay.sh
-  Control+Alt + s
-
-$USER_HOME/reboot_overlay.sh
-  Control+Alt + r
-EOF
-set_ownership_and_perms "$USER_HOME/.xbindkeysrc" 644
-
-echo "📄 Installing kiosk startup scripts..."
-cp .xinitrc "$USER_HOME/.xinitrc"
-#cp launch_wrapper.sh "$USER_HOME/launch_wrapper.sh"
-chmod +x "$USER_HOME/.xinitrc" #"$USER_HOME/launch_wrapper.sh"
-chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.xinitrc" #"$USER_HOME/launch_wrapper.sh"
 
 PROFILE_FILE="$USER_HOME/.bash_profile"
 if ! grep -q 'exec startx' "$PROFILE_FILE" 2>/dev/null; then

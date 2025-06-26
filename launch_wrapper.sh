@@ -9,7 +9,3 @@ unclutter -idle 0 &
 # Launch BasiliskII fullscreen
 BasiliskII
 
-# If BasiliskII exits, show message and reboot after short delay
-echo "❌ BasiliskII exited. Rebooting in 10 seconds..."
-sleep 10
-sudo reboot
