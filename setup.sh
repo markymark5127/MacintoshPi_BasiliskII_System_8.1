@@ -302,7 +302,9 @@ set_ownership_and_perms "$USER_HOME/.hushlogin" 644
 
 echo "⚙️ Configuring autologin to $TARGET_USER..."
 sudo raspi-config nonint do_boot_behaviour B2
-sudo raspi-config nonint do_user_password "$TARGET_USER"
+read -s -p "Enter a password for $TARGET_USER: " USER_PWD
+echo
+echo "$TARGET_USER:$USER_PWD" | sudo chpasswd
 sudo mkdir -p /etc/systemd/system/getty@tty1.service.d
 
 sudo bash -c "cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf" <<EOF
