@@ -48,12 +48,19 @@ if $MINECRAFT_MODE; then
   fi
   cp /Minecraft/libminecraftpe.so "$USER_HOME/.minecraft-pi/overrides/libminecraftpe.so"
   set_ownership_and_perms "$USER_HOME/.minecraft-pi/overrides/libminecraftpe.so" 644
-  if [ ! -f /Minecraft/libminecraftpe.so ]; then
-    echo "❌ Missing libminecraftpe.so. Please place it in the script directory."
+  if [ ! -f /Minecraft/Minecraft ]; then
+    echo "❌ Missing Minecraft app. Please place it in the script directory."
     exit 1
   fi
-  cp /Minecraft/libminecraftpe.so "$USER_HOME/.minecraft-pi/overrides/libminecraftpe.so"
-  set_ownership_and_perms "$USER_HOME/.minecraft-pi/overrides/libminecraftpe.so" 644
+  cp /Minecraft/Minecraft /InstallFiles/Minecraft
+  set_ownership_and_perms /InstallFiles/Minecraft 644
+  if [ ! -f /Minecraft/.launch_minecraft ]; then
+    echo "❌ Missing Minecraft launch file. Please place it in the script directory."
+    exit 1
+  fi
+  cp /Minecraft/.launch_minecraft /InstallFiles/.launch_minecraft
+  set_ownership_and_perms /InstallFiles/.launch_minecraft 644
+
 fi
 
 echo "📦 Cloning & building Basilisk II..."
