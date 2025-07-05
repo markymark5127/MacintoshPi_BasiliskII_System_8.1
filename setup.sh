@@ -38,12 +38,22 @@ sudo apt install -y \
 
 if $MINECRAFT_MODE; then
   echo "🧱 Installing Minecraft Pi Edition Reborn dependencies..."
-  sudo apt install -y cmake g++ libsdl2-mixer-dev libsdl2-ttf-dev libcurl4-openssl-dev libglew-dev
-  mkdir -p "$USER_HOME/mcpi-reborn"
-  cd "$USER_HOME/mcpi-reborn"
-  git clone https://github.com/TheBrokenRail/mcpi-reborn.git .
-  ./scripts/install.sh
-  cd -
+  sudo apt update
+  sudo apt install flatpak -y
+  flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+  flatpak install flathub com.thebrokenrail.MCPIReborn
+  if [ ! -f /Minecraft/libminecraftpe.so ]; then
+    echo "❌ Missing libminecraftpe.so. Please place it in the script directory."
+    exit 1
+  fi
+  cp /Minecraft/libminecraftpe.so "$USER_HOME/.minecraft-pi/overrides/libminecraftpe.so"
+  set_ownership_and_perms "$USER_HOME/.minecraft-pi/overrides/libminecraftpe.so" 644
+  if [ ! -f /Minecraft/libminecraftpe.so ]; then
+    echo "❌ Missing libminecraftpe.so. Please place it in the script directory."
+    exit 1
+  fi
+  cp /Minecraft/libminecraftpe.so "$USER_HOME/.minecraft-pi/overrides/libminecraftpe.so"
+  set_ownership_and_perms "$USER_HOME/.minecraft-pi/overrides/libminecraftpe.so" 644
 fi
 
 echo "📦 Cloning & building Basilisk II..."
@@ -298,11 +308,21 @@ chmod +x "$USER_HOME/shutdown_overlay.sh" "$USER_HOME/reboot_overlay.sh"
 chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/shutdown_overlay.sh" "$USER_HOME/reboot_overlay.sh"
 
 
-PROFILE_FILE="$USER_HOME/.bash_profile"
-if ! grep -q 'exec startx' "$PROFILE_FILE" 2>/dev/null; then
-  echo '[[ -z $DISPLAY && $XDG_VTNR -eq 1 ]] && exec startx' >> "$PROFILE_FILE"
-  chown "$TARGET_USER:$TARGET_USER" "$PROFILE_FILE"
+echo "📝 Writing $USER_HOME/.bash_profile for console autostart..."
+
+cat <<'EOF' > "$USER_HOME/.bash_profile"
+# Automatically run BasiliskII on console autologin with logging
+if [ -z "$DISPLAY" ] && [ "$XDG_VTNR" -eq 1 ]; then
+  echo "Starting BasiliskII on boot at \$(date)" >> "$HOME/basiliskii.log"
+  BasiliskII --config "$HOME/.basilisk_ii_prefs" >> "$HOME/basiliskii.log" 2>&1
 fi
+EOF
+
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.bash_profile"
+chmod 644 "$USER_HOME/.bash_profile"
+
+echo "✅ .bash_profile set up for autostart."
+
 
 touch "$USER_HOME/.hushlogin"
 set_ownership_and_perms "$USER_HOME/.hushlogin" 644
