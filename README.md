@@ -48,7 +48,7 @@ The installer handles all dependencies and will automatically copy the `Minecraf
 | `shutdown_overlay.sh`     | Script: show shutdown image and power off                 |
 | `reboot_overlay.sh`       | Script: show reboot image and restart                     |
 | `InstallFiles/`           | Apps auto-copied to `macos8.img/Applications`             |
-| `InstallFiles/Minecraft/` | If `--with-minecraft` flag: `.launch_minecraft` → Applications, `Minecraft` app → Desktop (Pi Edition Reborn) |
+| `Minecraft/` | If `--with-minecraft` flag: `.launch_minecraft` → Applications, `Minecraft` app → Desktop (Pi Edition Reborn) |
 
 ---
 

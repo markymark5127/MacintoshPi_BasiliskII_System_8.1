@@ -13,6 +13,7 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+INSTALLER_DIR=$(dirname "$0")
 TARGET_USER="${SUDO_USER:-$USER}"
 USER_HOME=$(eval echo "~$TARGET_USER")
 PREFS_PATH="$USER_HOME/.basilisk_ii_prefs"
@@ -79,8 +80,67 @@ fi
 sudo make install
 cd ../../../../
 
-echo "📁 Creating macos8 directory..."
-mkdir -p "$USER_HOME/macos8" "$USER_HOME/macos8/Apps"
+echo "📁 Creating macos8 folders..."
+mkdir -p "$USER_HOME/macos8" "$USER_HOME/macos8/Apps" "$USER_HOME/macos8/DriveParts"
+cp Drive/* "$USER_HOME/macos8/DriveParts"
+set_ownership_and_perms "$USER_HOME/macos8/DriveParts" 755
+
+echo "📝 Writing add_macos8_drive.sh helper script into macos8 folder..."
+
+echo "📝 Writing add_macos8_drive.sh helper script into macos8 folder..."
+
+cat <<'EOF' > "$USER_HOME/macos8/add_macos8_drive.sh"
+#!/bin/bash
+set -euo pipefail
+
+echo "Enter a name for your new drive image (no spaces):"
+read -r name
+
+IMG_PARTS_DIR="\$HOME/macos8/DriveParts"
+IMG_PATH="\$HOME/macos8/\${name}.img"
+MD5_EXPECTED="a2a8c2749940d42b7f0d11dc2aaabd2f"
+PREFS_FILE="\$HOME/.basilisk_ii_prefs"
+
+if ls "\$IMG_PARTS_DIR"/macos8.img.part_* 1> /dev/null 2>&1; then
+  if [ -f "\$IMG_PATH" ]; then
+    echo "⚠️ Existing \$IMG_PATH will be overwritten."
+    rm -f "\$IMG_PATH"
+  fi
+
+  echo "📦 Assembling image..."
+  cat "\$IMG_PARTS_DIR"/macos8.img.part_* > "\$IMG_PATH"
+
+  echo "🔍 Verifying checksum..."
+  MD5_ACTUAL=\$(md5sum "\$IMG_PATH" | awk '{print \$1}')
+  if [ "\$MD5_ACTUAL" != "\$MD5_EXPECTED" ]; then
+    echo "❌ Checksum mismatch! Expected \$MD5_EXPECTED but got \$MD5_ACTUAL"
+    exit 1
+  fi
+
+  chmod 644 "\$IMG_PATH"
+  echo "✅ \$IMG_PATH successfully assembled and verified."
+
+  echo "➕ Adding new disk line to BasiliskII prefs..."
+  echo "disk \$IMG_PATH" >> "\$PREFS_FILE"
+  echo "✅ Added: disk \$IMG_PATH"
+
+else
+  echo "❌ Image parts not found in \$IMG_PARTS_DIR. Aborting."
+  exit 1
+fi
+EOF
+
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8/add_macos8_drive.sh"
+chmod +x "$USER_HOME/macos8/add_macos8_drive.sh"
+
+echo "✅ add_macos8_drive.sh created in $USER_HOME/macos8"
+
+
+chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8/add_macos8_drive.sh"
+chmod +x "$USER_HOME/macos8/add_macos8_drive.sh"
+
+echo "✅ add_macos8_drive.sh created in $USER_HOME/macos8"
+
 
 echo "📄 Checking and copying ROM and disk images..."
 if [ ! -f LC575.ROM ]; then
@@ -203,6 +263,92 @@ set_ownership_and_perms "$PREFS_PATH" 644
 
 echo "🧩 Installing kiosk files..."
 
+# Write launch wrapper
+cat <<'EOF' > "$USER_HOME/launch_wrapper.sh"
+#!/bin/bash
+set -euo pipefail
+
+echo "🌀 Starting BasiliskII ↔ Minecraft kiosk supervisor"
+
+TARGET_USER="${SUDO_USER:-$USER}"
+USER_HOME=$(eval echo "~$TARGET_USER")
+
+BASILISKII_CMD="BasiliskII --config \"$USER_HOME/.basilisk_ii_prefs\""
+MINECRAFT_CMD="flatpak run com.thebrokenrail.MCPIReborn"
+
+# Paths for triggers
+MINECRAFT_TRIGGER="$USER_HOME/Downloads/.launch_minecraft"
+REBOOT_TRIGGER="$USER_HOME/.reboot"
+SHUTDOWN_TRIGGER="$USER_HOME/.shutdown"
+
+while true; do
+  echo "🚀 Launching BasiliskII..."
+  eval $BASILISKII_CMD
+
+  echo "🛑 BasiliskII has exited."
+
+  # Check for reboot or shutdown triggers
+  if [ -f "$REBOOT_TRIGGER" ]; then
+    echo "🔁 Reboot trigger detected!"
+    rm -f "$REBOOT_TRIGGER"
+    sudo reboot
+    exit 0
+  fi
+
+  if [ -f "$SHUTDOWN_TRIGGER" ]; then
+    echo "⏻ Shutdown trigger detected!"
+    rm -f "$SHUTDOWN_TRIGGER"
+    sudo shutdown -h now
+    exit 0
+  fi
+
+  # Check for Minecraft trigger
+  if [ -f "$MINECRAFT_TRIGGER" ]; then
+    echo "🎮 Minecraft launch trigger detected!"
+    rm -f "$MINECRAFT_TRIGGER"
+
+    echo "✅ Starting Minecraft Pi Edition Reborn..."
+    eval $MINECRAFT_CMD
+
+    echo "🎮 Minecraft has exited. Returning to BasiliskII."
+    # Loop continues → BasiliskII relaunches
+  else
+    echo "⏳ No immediate triggers found. Waiting 5 seconds to see if reboot is desired..."
+    sleep 5
+
+    # Re-check reboot/shutdown triggers after wait
+    if [ -f "$REBOOT_TRIGGER" ]; then
+      echo "🔁 Reboot trigger detected (after delay)!"
+      rm -f "$REBOOT_TRIGGER"
+      sudo reboot
+      exit 0
+    fi
+
+    if [ -f "$SHUTDOWN_TRIGGER" ]; then
+      echo "⏻ Shutdown trigger detected (after delay)!"
+      rm -f "$SHUTDOWN_TRIGGER"
+      sudo shutdown -h now
+      exit 0
+    fi
+
+    if [ -f "$MINECRAFT_TRIGGER" ]; then
+      echo "🎮 Minecraft launch trigger detected (after delay)!"
+      rm -f "$MINECRAFT_TRIGGER"
+      echo "✅ Starting Minecraft Pi Edition Reborn..."
+      eval $MINECRAFT_CMD
+      echo "🎮 Minecraft has exited. Returning to BasiliskII."
+      continue
+    fi
+
+    # Nothing else triggered → treat as shutdown request
+    echo "⚠️ No triggers after delay. Assuming guest chose shutdown. Shutting down host."
+    sudo shutdown -h now
+    exit 0
+  fi
+done
+
+EOF
+
 # Write new .xinitrc
 cat <<'EOF' > "$USER_HOME/.xinitrc"
 #!/bin/bash
@@ -316,18 +462,13 @@ chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/shutdown_overlay.sh" "$USER_HOME/r
 
 
 echo "📝 Writing $USER_HOME/.bash_profile for console autostart..."
-
 cat <<'EOF' > "$USER_HOME/.bash_profile"
-# Automatically run BasiliskII on console autologin with logging
 if [ -z "$DISPLAY" ] && [ "$XDG_VTNR" -eq 1 ]; then
-  echo "Starting BasiliskII on boot at \$(date)" >> "$HOME/basiliskii.log"
-  BasiliskII --config "$HOME/.basilisk_ii_prefs" >> "$HOME/basiliskii.log" 2>&1
+  "$HOME/launch_wrapper.sh" >> "$HOME/kiosk.log" 2>&1
 fi
 EOF
-
 chown "$TARGET_USER:$TARGET_USER" "$USER_HOME/.bash_profile"
 chmod 644 "$USER_HOME/.bash_profile"
-
 echo "✅ .bash_profile set up for autostart."
 
 
@@ -444,6 +585,27 @@ if [ -d InstallFiles ]; then
 else
   echo "⚠️ No InstallFiles directory found. Skipping copy step."
 fi
+
+echo "🔧 Fixing ownership of macos8 folder..."
+chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/macos8"
+chmod -R u+rwX,g+rX,o+rX "$USER_HOME/macos8"
+
+echo "🧹 Removing self build source..."
+sleep 10
+echo "🧹 Removing macemu build source..."
+rm -rf "$PWD/macemu"
+echo "✅ macemu source removed."
+
+echo "🧹 Removing installer directory $INSTALLER_DIR..."
+rm -rf "$INSTALLER_DIR"
+
+echo "✅ Cleanup complete."
+
+echo "🔧 Disabling noisy systemd boot messages in /boot/cmdline.txt..."
+sudo sed -i 's/ quiet//g' /boot/cmdline.txt
+sudo sed -i 's/ loglevel=0//g' /boot/cmdline.txt
+sudo sed -i 's/$/ quiet loglevel=0/' /boot/cmdline.txt
+echo "✅ Boot command line now suppresses console output while keeping splash."
 
 echo "🔁 Re-applying autologin boot behavior..."
 sudo raspi-config nonint do_boot_behaviour B2
