@@ -26,8 +26,15 @@ set_ownership_and_perms() {
 
 echo "🔧 Installing dependencies..."
 sudo apt update
-sudo apt install -y build-essential libsdl2-dev libsdl2-image-dev git hfsutils hfsprogs \
-  unclutter xbindkeys alsa-utils autoconf automake libtool libmpfr-dev feh
+sudo apt install -y \
+  build-essential libsdl2-dev libsdl2-image-dev git hfsutils hfsprogs \
+  unclutter xbindkeys alsa-utils autoconf automake libtool libmpfr-dev feh \
+  gobjc libudev-dev xa65 byacc texi2html flex libreadline-dev unzip \
+  libxaw7-dev texinfo unar libgtk2.0-cil-dev libgtkglext1-dev libpulse-dev \
+  bison libnet1 libnet1-dev libpcap0.8 libpcap0.8-dev libvte-dev \
+  libasound2-dev raspberrypi-kernel-headers
+
+
 
 if $MINECRAFT_MODE; then
   echo "🧱 Installing Minecraft Pi Edition Reborn dependencies..."
